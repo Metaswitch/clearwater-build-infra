@@ -100,7 +100,7 @@ deb-build:
 deb-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                     \
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                 \
-	    @echo Copying to staging server ${REPO_SERVER}... ;                                                                \
+	    echo Copying to directory ${REPO_DIR} on staging server ${REPO_SERVER}... ;                                                                \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                 \
 	    ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                   \
 	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;          \
