@@ -56,13 +56,13 @@
 #                       ones we built just now. See http://wiki.debian.org/SecureApt
 #                       for details.
 
-DEB_VERSION := ${DEB_MAJOR_VERSION}-$(shell date +%y%m%d.%H%M%S)
+DEB_VERSION ?= ${DEB_MAJOR_VERSION}-$(shell date +%y%m%d.%H%M%S)
 ifeq ($(origin DEB_ARCH), undefined)
 DEB_ARCH := $(shell dpkg --print-architecture)
 endif
 
 # Package maintainer, and owner of the signing key.
-CW_SIGNER := maintainers@projectclearwater.org
+CW_SIGNER ?= maintainers@projectclearwater.org
 CW_SIGNER_REAL := Project Clearwater Maintainers
 
 # Commands to build a package repo.
