@@ -107,7 +107,7 @@ deb-move:
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
 	  else                                                                                                                 \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                      \
-	    if [ -z "${REPO_KEEP_OLD}" ] ; then                                                                                \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                \
 	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                      \
 	    fi ;                                                                                                               \
 	    for deb in ${DEB_NAMES} ; do mv ../$${deb}_${DEB_VERSION}_${DEB_ARCH}.deb ${REPO_DIR}/binary; done ;               \
