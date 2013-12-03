@@ -100,14 +100,16 @@ deb-build:
 deb-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                     \
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                 \
-	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                                \
+	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                           \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                 \
-	    ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                   \
+            if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
+	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                 \
+            fi ;                                                                                                               \
 	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;          \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
 	  else                                                                                                                 \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                      \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
 	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                      \
 	    fi ;                                                                                                               \
 	    for deb in ${DEB_NAMES} ; do mv ../$${deb}_${DEB_VERSION}_${DEB_ARCH}.deb ${REPO_DIR}/binary; done ;               \
