@@ -125,6 +125,9 @@ deb-move-hardened:
 	 if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                          \
 	   echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                           \
 	   ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                 \
+	   if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                \
+	     ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${HARDENED_DEB_NAMES}) ;                        \
+	   fi ;                                                                                                                                 \
 	   ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${HARDENED_DEB_NAMES}) ;                          \
 	   scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${HARDENED_DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ; \
 	   ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
