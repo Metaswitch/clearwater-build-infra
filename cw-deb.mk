@@ -66,10 +66,10 @@ CW_SIGNER ?= maintainers@projectclearwater.org
 CW_SIGNER_REAL := Project Clearwater Maintainers
 
 # Commands to build a package repo.
-CW_BUILD_REPO := dpkg-scanpackages binary /dev/null > binary/Packages;               \
-                 gzip -9c binary/Packages >binary/Packages.gz;                       \
-                 rm -f binary/Release binary/Release.gpg;                            \
-                 apt-ftparchive -o APT::FTPArchive::Release::Codename=binary         \
+CW_BUILD_REPO := dpkg-scanpackages --multiversion binary /dev/null > binary/Packages; \
+                 gzip -9c binary/Packages >binary/Packages.gz;                        \
+                 rm -f binary/Release binary/Release.gpg;                             \
+                 apt-ftparchive -o APT::FTPArchive::Release::Codename=binary          \
                                                      release binary > binary/Release
 ifeq ($(CW_SIGNED), Y)
 CW_BUILD_REPO := $(CW_BUILD_REPO);                                                   \
@@ -103,12 +103,16 @@ deb-move:
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                 \
 	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                           \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                 \
-	    ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                   \
+            if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
+	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                 \
+            fi ;                                                                                                               \
 	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;          \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
 	  else                                                                                                                 \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                      \
-	    rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                        \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
+	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                      \
+	    fi ;                                                                                                               \
 	    for deb in ${DEB_NAMES} ; do mv ../$${deb}_${DEB_VERSION}_${DEB_ARCH}.deb ${REPO_DIR}/binary; done ;               \
 	    cd ${REPO_DIR} ; ${CW_BUILD_REPO}; cd - >/dev/null ;                                                               \
 	  fi                                                                                                                   \
