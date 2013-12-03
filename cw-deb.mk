@@ -76,12 +76,13 @@ CW_BUILD_REPO := $(CW_BUILD_REPO);                                              
                  gpg -abs -u $(CW_SIGNER) --output binary/Release.gpg binary/Release
 endif
 
+HARDENED_DEB_NAMES ?= $(DEB_NAMES)
 # thanks to http://stackoverflow.com/questions/1593051/how-to-programmatically-determine-the-current-checked-out-git-branch
 GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#refs/heads/}; branch=$${branch:-HEAD}; echo $$branch)
 
 # Build and move to the repository server (if present).
 .PHONY: deb-only
-deb-only: deb-build deb-move
+deb-only: deb-build deb-move deb-move-hardened
 
 # Build the .deb files in ../*.deb
 .PHONY: deb-build
@@ -100,7 +101,7 @@ deb-build:
 deb-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                     \
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                 \
-	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                                \
+	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                           \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                 \
 	    ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                   \
 	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;          \
@@ -113,3 +114,14 @@ deb-move:
 	  fi                                                                                                                   \
 	fi
 
+.PHONY: deb-move-hardened
+deb-move-hardened:
+	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                                             \
+	 if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                          \
+	   echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                           \
+	   ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                 \
+	   ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${HARDENED_DEB_NAMES}) ;                          \
+	   scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${HARDENED_DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ; \
+	   ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
+	 fi                                                                                                                                     \
+	fi                                                                                                                     
