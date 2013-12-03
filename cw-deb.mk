@@ -57,6 +57,7 @@
 #                       for details.
 
 DEB_VERSION ?= ${DEB_MAJOR_VERSION}-$(shell date +%y%m%d.%H%M%S)
+DEB_VERSION := $(DEB_VERSION)
 ifeq ($(origin DEB_ARCH), undefined)
 DEB_ARCH := $(shell dpkg --print-architecture)
 endif
