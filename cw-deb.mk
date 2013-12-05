@@ -77,7 +77,6 @@ CW_BUILD_REPO := $(CW_BUILD_REPO);                                              
                  gpg -abs -u $(CW_SIGNER) --output binary/Release.gpg binary/Release
 endif
 
-HARDENED_DEB_NAMES ?= $(DEB_NAMES)
 # thanks to http://stackoverflow.com/questions/1593051/how-to-programmatically-determine-the-current-checked-out-git-branch
 GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#refs/heads/}; branch=$${branch:-HEAD}; echo $$branch)
 
@@ -104,9 +103,9 @@ deb-move:
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                 \
 	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                           \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                 \
-            if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                              \
 	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                 \
-            fi ;                                                                                                               \
+	    fi ;                                                                                                               \
 	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;          \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
 	  else                                                                                                                 \
@@ -121,15 +120,21 @@ deb-move:
 
 .PHONY: deb-move-hardened
 deb-move-hardened:
-	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                                             \
-	 if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                          \
-	   echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                           \
-	   ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                 \
-	   if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                \
-	     ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${HARDENED_DEB_NAMES}) ;                        \
-	   fi ;                                                                                                                                 \
-	   ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${HARDENED_DEB_NAMES}) ;                          \
-	   scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${HARDENED_DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ; \
-	   ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
-	 fi                                                                                                                                     \
-	fi                                                                                                                     
+	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                                              \
+	  if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                          \
+	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                           \
+	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                 \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                \
+	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                 \
+	    fi ;                                                                                                                                 \
+	    scp $(patsubst %, ../%_${DEB_VERSION}_${DEB_ARCH}.deb, ${DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;          \
+	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${CW_BUILD_REPO}' ;                                                           \
+	  else                                                                                                                                   \
+	    mkdir -p ${HARDENED_REPO_DIR}/binary ;                                                                                               \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                \
+	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                               \
+	    fi ;                                                                                                                                 \
+	    for deb in ${DEB_NAMES} ; do mv ../$${deb}_${DEB_VERSION}_${DEB_ARCH}.deb ${HARDENED_REPO_DIR}/binary; done ;                        \
+	    cd ${HARDENED_REPO_DIR} ; ${CW_BUILD_REPO}; cd - >/dev/null ;                                                                        \
+	  fi                                                                                                                                     \
+	 fi
