@@ -93,7 +93,10 @@ deb-only: deb-build deb-move deb-move-hardened
 .PHONY: deb-build
 deb-build:
 	echo "${DEB_COMPONENT} (${DEB_VERSION}) unstable; urgency=low" >debian/changelog
-	echo "  * build from $$(printf $$(git config --get remote.origin.url|sed -e 's#git@github.com:\([^/]*\)\([^.]*\)[.]git#http://git@github.com/\1\2/commit/#'))$$(git rev-parse HEAD)" >>debian/changelog
+	echo "  * build from $$(printf $$(git config --get remote.origin.url|sed -e 's#git@github.com:\([^/]*\)\([^.]*\)[.]git#http://git@github.com/\1\2/tree/#'))$$(git rev-parse HEAD)" >>debian/changelog
+	echo "    git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog
+	echo "    cd $$(git config --get remote.origin.url|sed -e 's#git@github.com:\([^/]*\)/\([^.]*\)[.]git#\2#')" >>debian/changelog
+	echo "    git checkout $$(git rev-parse HEAD)" >>debian/changelog
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
 	debuild --no-lintian -b -uc -us
 
