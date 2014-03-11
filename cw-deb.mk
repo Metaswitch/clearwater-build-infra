@@ -117,7 +117,6 @@ ifneq ($(wildcard $(LICENSE)),)
 	echo "" >> debian/copyright
 	cat $(LICENSE) >> debian/copyright
 else
-else
 	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
 	@exit 1
 endif
