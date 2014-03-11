@@ -90,6 +90,7 @@ GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#r
 deb-only: deb-build deb-move deb-move-hardened
 
 SHELL := bash
+LICENSE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))license
 
 # Build the .deb files in ../*.deb
 .PHONY: deb-build
@@ -111,6 +112,11 @@ deb-build:
 		echo "  * build from revision $$(git rev-parse HEAD)" >>debian/changelog;\
 	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
+ifneq ($(wildcard $(LICENSE)),)
+	echo $(LICENSE)
+	echo "" >> debian/copyright
+	cat $(LICENSE) >> debian/copyright
+endif
 	debuild --no-lintian -b -uc -us
 
 # Move to repository.  Must be the same make invocation as deb-build, unless
