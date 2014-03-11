@@ -93,10 +93,21 @@ deb-only: deb-build deb-move deb-move-hardened
 .PHONY: deb-build
 deb-build:
 	echo "${DEB_COMPONENT} (${DEB_VERSION}) unstable; urgency=low" >debian/changelog
-	echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)\([^.]*\)[.]git#http://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog
-	echo "    git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog
-	echo "    cd $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')" >>debian/changelog
-	echo "    git checkout $$(git rev-parse HEAD)" >>debian/changelog
+	# If this is Clearwater Core build then output Git instructions for accessing the build tree
+	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com ]]; then\
+		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)\([^.]*\)[.]git#http://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
+		echo "    Use Git to access the source code for this build as follows:" >>debian/changelog;\
+		echo "      $$ git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog;\
+		echo "      Cloning into '$$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')'..." >>debian/changelog;\
+		echo "        ..."  >>debian/changelog;\
+		echo "      $$ cd $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')" >>debian/changelog;\
+		echo "      $$ git checkout -q $$(git rev-parse HEAD)" >>debian/changelog;\
+		echo "      $$ git submodule update --init" >>debian/changelog;\
+		echo "        ..."  >>debian/changelog;\
+		echo "      $$"  >>debian/changelog;\
+        else\
+		echo "  * build from revision $$(git rev-parse HEAD)" >>debian/changelog;\
+	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
 	debuild --no-lintian -b -uc -us
 
