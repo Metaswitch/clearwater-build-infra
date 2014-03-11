@@ -96,8 +96,8 @@ LICENSE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))license
 .PHONY: deb-build
 deb-build:
 	echo "${DEB_COMPONENT} (${DEB_VERSION}) unstable; urgency=low" >debian/changelog
-	# If this is Clearwater Core build then output Git instructions for accessing the build tree
-	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com ]]; then\
+	# If this is build from a git@github.com: URL then output Git instructions for accessing the build tree
+	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
 		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)\([^.]*\)[.]git#http://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
 		echo "    Use Git to access the source code for this build as follows:" >>debian/changelog;\
 		echo "      $$ git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog;\
@@ -116,6 +116,10 @@ ifneq ($(wildcard $(LICENSE)),)
 	echo $(LICENSE)
 	echo "" >> debian/copyright
 	cat $(LICENSE) >> debian/copyright
+else
+else
+	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
+	@exit 1
 endif
 	debuild --no-lintian -b -uc -us
 
