@@ -89,6 +89,8 @@ GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#r
 .PHONY: deb-only
 deb-only: deb-build deb-move deb-move-hardened
 
+SHELL := bash
+
 # Build the .deb files in ../*.deb
 .PHONY: deb-build
 deb-build:
