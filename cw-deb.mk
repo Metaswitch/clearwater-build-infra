@@ -113,9 +113,10 @@ deb-build:
 	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
 ifneq ($(wildcard $(LICENSE)),)
-	echo $(LICENSE)
-	echo "" >> debian/copyright
-	cat $(LICENSE) >> debian/copyright
+	grep -q "License: GPL-3+ with OpenSSL exception" debian/copyright"; if [ $? -ne 0 ]; then\
+		echo "" >> debian/copyright;\
+		cat $(LICENSE) >> debian/copyright;\
+	fi
 else
 	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
 	@exit 1
