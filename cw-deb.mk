@@ -98,7 +98,7 @@ deb-build:
 	echo "${DEB_COMPONENT} (${DEB_VERSION}) unstable; urgency=low" >debian/changelog
 	# If this is build from a git@github.com: URL then output Git instructions for accessing the build tree
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
-		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)\([^.]*\)[.]git#http://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
+		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^git@\([^:]*\):\([^/]*\)\([^.]*\)[.]git#https://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
 		echo "    Use Git to access the source code for this build as follows:" >>debian/changelog;\
 		echo "      $$ git config --global url.\"https://github.com/\".insteadOf git@github.com:" >>debian/changelog;\
 		echo "      $$ git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog;\
