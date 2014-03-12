@@ -100,6 +100,7 @@ deb-build:
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
 		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)\([^.]*\)[.]git#http://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
 		echo "    Use Git to access the source code for this build as follows:" >>debian/changelog;\
+		echo "      $$ git config --global url.\"https://github.com/\".insteadOf git@github.com:" >>debian/changelog;\
 		echo "      $$ git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog;\
 		echo "      Cloning into '$$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')'..." >>debian/changelog;\
 		echo "        ..."  >>debian/changelog;\
