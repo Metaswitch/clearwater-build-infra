@@ -89,12 +89,39 @@ GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#r
 .PHONY: deb-only
 deb-only: deb-build deb-move deb-move-hardened
 
+SHELL := bash
+LICENSE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))license
+
 # Build the .deb files in ../*.deb
 .PHONY: deb-build
 deb-build:
 	echo "${DEB_COMPONENT} (${DEB_VERSION}) unstable; urgency=low" >debian/changelog
-	echo "  * build from revision $$(git rev-parse HEAD))" >>debian/changelog
+	# If this is build from a git@github.com: URL then output Git instructions for accessing the build tree
+	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
+		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^git@\([^:]*\):\([^/]*\)\([^.]*\)[.]git#https://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
+		echo "    Use Git to access the source code for this build as follows:" >>debian/changelog;\
+		echo "      $$ git config --global url.\"https://github.com/\".insteadOf git@github.com:" >>debian/changelog;\
+		echo "      $$ git clone --recursive $$(git config --get remote.origin.url)" >>debian/changelog;\
+		echo "      Cloning into '$$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')'..." >>debian/changelog;\
+		echo "        ..."  >>debian/changelog;\
+		echo "      $$ cd $$(git config --get remote.origin.url|sed -e 's#^\([^:]*\):\([^/]*\)/\([^.]*\)[.]git#\3#')" >>debian/changelog;\
+		echo "      $$ git checkout -q $$(git rev-parse HEAD)" >>debian/changelog;\
+		echo "      $$ git submodule update --init" >>debian/changelog;\
+		echo "        ..."  >>debian/changelog;\
+		echo "      $$"  >>debian/changelog;\
+        else\
+		echo "  * build from revision $$(git rev-parse HEAD)" >>debian/changelog;\
+	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
+ifneq ($(wildcard $(LICENSE)),)
+	grep -q "License: GPL-3+ with OpenSSL exception" debian/copyright; if [ $$? -ne 0 ]; then\
+		echo "" >> debian/copyright;\
+		cat $(LICENSE) >> debian/copyright;\
+	fi
+else
+	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
+	@exit 1
+endif
 	debuild --no-lintian -b -uc -us
 
 # Move to repository.  Must be the same make invocation as deb-build, unless
