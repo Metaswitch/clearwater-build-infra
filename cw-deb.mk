@@ -117,6 +117,7 @@ ifneq ($(wildcard $(LICENSE)),)
 	grep -q "License: GPL-3+ with OpenSSL exception" debian/copyright; if [ $$? -ne 0 ]; then\
 		echo "" >> debian/copyright;\
 		cat $(LICENSE) >> debian/copyright;\
+		git update-index --assume-unchanged debian/copyright;\
 	fi
 else
 	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
