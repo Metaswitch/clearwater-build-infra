@@ -4,12 +4,22 @@
 # and then `include` this Makefile.  To customise the build product
 # Makefiles can define the following to tweak the behavior:
 #
-#   target_SOURCES  - List the .cpp files to build (defaults to target.cpp only)
-#   target_CPPFLAGS - Specific flags to pass to the C++ compiler
-#   target_LDFLAGS  - Specific flags to pass to the linker
+#   <target>_SOURCES  - List the .cpp files to build (defaults to target.cpp only)
+#   <target>_CPPFLAGS - Specific flags to pass to the C++ compiler
+#   <target>_LDFLAGS  - Specific flags to pass to the linker
+#
+# For test targets, there are a few extra customization flags:
+#
+#   <target>_VALGRIND_ARGS - Extra, product specific arguments for Valgrind
+#
+# This Makefile snippet defines a few variables that may be useful when adding
+# extra pre-requisites to targets:
+#
+#   <target>_OBJECT_DIR - Where objects are built
+#   CLEANS              - All files listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
-.PHONY : all test valgrind vg_check coverage_check coverage_raw clean
+.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
 
 # Makefiles can override these if needed
 GTEST_DIR ?= ../modules/gmock/gtest
@@ -20,14 +30,16 @@ BUILD_DIR ?= ../build
 # Common rules to build any target
 #
 # @param $1 - Target name (final executable)
-# @param $2 - Target
+# @param $2 - Build flavor (valid values are `test` or `release`)
 define common_target
 
 # Calculate the object names for the $1 build
 $1_OBJS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.o,$${$1_SOURCES})
 $1_DEPS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.d,$${$1_SOURCES})
 
-# Create alias for the object directory (for adding custom pre-requisites)
+# Create alias for the object directory this allows the parent Makefile
+# to add extra pre-requisites to specific objects (e.g. auto-generated
+# header files)
 $1_OBJECT_DIR := $${BUILD_DIR}/$1
 
 # Depend on the depends file so we'll get rebuilt if it's missing
@@ -36,9 +48,10 @@ $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d ${MAKEFILE_LIST
 	@mkdir -p $${$1_OBJECT_DIR}
 	g++ -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
 
-# Blank rule for depends files to force the object to be re-built
-# if the depends file is missing (as we don't know if it's out of
-# date or not)
+# Blank rule for depends files to prevent Make from complaining that it
+# can't build `blah.d` (since `blah.o` depends on it).  An empty rule
+# is special in Make and causes Make to force the `blah.o` to be re-built
+# (which as above will cause `blah.d` to be rebuilt too).
 $${$1_DEPS} : $${$1_OBJECT_DIR}/%.d : ;
 
 # Final linker step for $1
@@ -81,8 +94,11 @@ $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
 debug_$1 : $${BUILD_DIR}/bin/$1
 	LD_LIBRARY_PATH=../usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
 
+# Valgrind arguments for $1
+$1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
+
 $${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind --xml=yes --xml-file=$$@ $$<
+	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$<
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
@@ -100,7 +116,7 @@ valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
 
 .PHONY : valgrind_$1
 valgrind_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
 $1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut" $${$1_OBJECT_DIR}
@@ -130,7 +146,7 @@ coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
 
 test : run_$1
 valgrind : valgrind_$1
-vg_check : valgrind_check_$1
+valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
 
@@ -139,10 +155,11 @@ CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
 endef
 
 # Default values for build flags for each build
-__COMMON_CPPFLAGS := -ggdb3 -std=c++11
+__COMMON_CPPFLAGS := -ggdb3 -std=c++11 -Wall -Werror
 release_CPPFLAGS := -O2 ${__COMMON_CPPFLAGS}
 test_CPPFLAGS := -O0 ${__COMMON_CPPFLAGS} -DUNIT_TEST \
-                 -fprofile-arcs -ftest-coverage -fno-access-control\
+                 -fprofile-arcs -ftest-coverage \
+								 -fno-access-control \
 								 -I${GTEST_DIR}/include -I${GMOCK_DIR}/include \
                  -I${CPP_COMMON_DIR}/test_utils
 test_LDFLAGS := -lgcov
@@ -172,9 +189,15 @@ $(foreach target,${TEST_TARGETS},$(eval $(call test_target,${target})))
 # Build all non-test targets by default
 all : ${TARGETS}
 
+# Complete test suite, runs all possible test flavours)
+full_test : test valgrind_check coverage_check
+
 clean :
 	-rm $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
 
+# Makefile debugging target
+#
+# `make print-VARIABLE` will print the calculated value of `VARIABLE`
 print-% :
 	@echo $* = $($*)
 
