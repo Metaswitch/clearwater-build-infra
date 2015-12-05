@@ -22,8 +22,9 @@
 .PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
 
 # Makefiles can override these if needed
-GTEST_DIR ?= ../modules/gmock/gtest
 GMOCK_DIR ?= ../modules/gmock
+GTEST_DIR ?= ${GMOCK_DIR}/gtest
+GCOVR_DIR ?= ../modules/gcovr
 CPP_COMMON_DIR ?= ../modules/cpp-common
 BUILD_DIR ?= ../build
 
@@ -44,7 +45,7 @@ $1_OBJECT_DIR := $${BUILD_DIR}/$1
 
 # Depend on the depends file so we'll get rebuilt if it's missing
 # (which will have the side effect of re-producing the depends file)
-$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d ${MAKEFILE_LIST}
+$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d
 	@mkdir -p $${$1_OBJECT_DIR}
 	g++ -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
 
@@ -119,10 +120,10 @@ valgrind_$1 : $${BUILD_DIR}/bin/$1
 	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
-$1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut" $${$1_OBJECT_DIR}
+$1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut|^$${GMOCK_DIR}|$${$1_COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
 
 $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
-	@../modules/gcovr/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@
+	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@ || (rm $$@; exit 2)
 
 .PHONY : coverage_check_$1
 coverage_check_$1 : $${BUILD_DIR}/$1/coverage.xml
@@ -142,7 +143,7 @@ CLEANS += $${BUILD_DIR}/scratch/coverage_$1.tmp $${BUILD_DIR}/scratch/coverage_$
 
 .PHONY : coverage_raw_$1
 coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
-	@../modules/gcovr/scripts/gcovr $${$1_COVERAGE_ARGS} --keep --sort-percentage
+	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --keep --sort-percentage
 
 test : run_$1
 valgrind : valgrind_$1
@@ -159,8 +160,8 @@ __COMMON_CPPFLAGS := -ggdb3 -std=c++11 -Wall -Werror
 release_CPPFLAGS := -O2 ${__COMMON_CPPFLAGS}
 test_CPPFLAGS := -O0 ${__COMMON_CPPFLAGS} -DUNIT_TEST \
                  -fprofile-arcs -ftest-coverage \
-								 -fno-access-control \
-								 -I${GTEST_DIR}/include -I${GMOCK_DIR}/include \
+                 -fno-access-control \
+                 -I${GTEST_DIR}/include -I${GMOCK_DIR}/include \
                  -I${CPP_COMMON_DIR}/test_utils
 test_LDFLAGS := -lgcov
 
@@ -168,11 +169,11 @@ ifdef JUSTTEST
   EXTRA_TEST_ARGS ?= --gtest_filter=*$(JUSTTEST)*
 endif
 
-../build/obj/gmock-all.o : ${GMOCK_DIR}/src/gmock-all.cc ${GMOCK_DIR}/include/gmock/*.h ${GMOCK_DIR}/include/gmock/internal/*.h
-	@mkdir -p ../build/obj
+${BUILD_DIR}/obj/gmock-all.o : ${GMOCK_DIR}/src/gmock-all.cc ${GMOCK_DIR}/include/gmock/*.h ${GMOCK_DIR}/include/gmock/internal/*.h
+	@mkdir -p ${BUILD_DIR}/obj
 	${CXX} ${test_CPPFLAGS} -I${GTEST_DIR}/include -I${GMOCK_DIR}/include -I${GMOCK_DIR} -c $< -o $@
-../build/obj/gtest-all.o : ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/include/gtest/*.h ${GTEST_DIR}/include/gtest/internal/*.h
-	@mkdir -p ../build/obj
+${BUILD_DIR}/obj/gtest-all.o : ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/include/gtest/*.h ${GTEST_DIR}/include/gtest/internal/*.h
+	@mkdir -p ${BUILD_DIR}/obj
 	${CXX} ${test_CPPFLAGS} -I${GTEST_DIR}/include -I${GTEST_DIR}/include -I${GTEST_DIR} -c $< -o $@
 
 # Print out the generate Makefile snippet for debugging purposes
@@ -190,7 +191,7 @@ $(foreach target,${TEST_TARGETS},$(eval $(call test_target,${target})))
 all : ${TARGETS}
 
 # Complete test suite, runs all possible test flavours)
-full_test : test valgrind_check coverage_check
+full_test : valgrind_check coverage_check
 
 clean :
 	-rm $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
