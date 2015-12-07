@@ -88,7 +88,7 @@ run_$1 : $${BUILD_DIR}/bin/$1
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ $$<
+	LD_LIBRARY_PATH=../usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
 	@touch $$@
 
 .PHONY : debug_$1
