@@ -15,8 +15,8 @@
 # This Makefile snippet defines a few variables that may be useful when adding
 # extra pre-requisites to targets:
 #
-#   <target>_OBJECT_DIR - Where objects are built
 #   CLEANS              - All files listed in this will be removed by `make clean`
+#   CLEAN_DIRS          - All directories listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
 .PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
@@ -69,7 +69,8 @@ $1 : $${BUILD_DIR}/bin/$1
 DEPENDS += $${$1_DEPS}}
 
 # Clean up for $1
-CLEANS += $${$1_OBJS} $${$1_DEPS} $${BUILD_DIR}/bin/$1
+CLEANS += $${BUILD_DIR}/bin/$1
+CLEAN_DIRS += $${$1_OBJECT_DIR}
 
 endef
 
@@ -177,6 +178,8 @@ ${BUILD_DIR}/obj/gtest-all.o : ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/includ
 	@mkdir -p ${BUILD_DIR}/obj
 	${CXX} ${test_CPPFLAGS} -I${GTEST_DIR}/include -I${GTEST_DIR}/include -I${GTEST_DIR} -c $< -o $@
 
+CLEAN_DIRS += ${BUILD_DIR}/obj
+
 # Print out the generate Makefile snippet for debugging purposes
 ifdef DEBUG_MAKEFILE
 $(foreach target,${TARGETS},$(info $(call common_target,${target},release)))
@@ -196,6 +199,7 @@ full_test : valgrind_check coverage_check
 
 clean :
 	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
+	@rm -fr $(sort ${CLEAN_DIRS})
 
 # Makefile debugging target
 #
