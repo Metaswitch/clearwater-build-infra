@@ -22,11 +22,12 @@
 .PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
 
 # Makefiles can override these if needed
-GMOCK_DIR ?= ../modules/gmock
+ROOT ?= ..
+GMOCK_DIR ?= ${ROOT}/modules/gmock
 GTEST_DIR ?= ${GMOCK_DIR}/gtest
-GCOVR_DIR ?= ../modules/gcovr
-CPP_COMMON_DIR ?= ../modules/cpp-common
-BUILD_DIR ?= ../build
+GCOVR_DIR ?= ${ROOT}/modules/gcovr
+CPP_COMMON_DIR ?= ${ROOT}/modules/cpp-common
+BUILD_DIR ?= ${ROOT}/build
 
 # Common rules to build any target
 #
@@ -194,7 +195,7 @@ all : ${TARGETS}
 full_test : valgrind_check coverage_check
 
 clean :
-	-rm $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
+	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
 
 # Makefile debugging target
 #
