@@ -48,7 +48,7 @@ $1_OBJECT_DIR := $${BUILD_DIR}/$1
 # (which will have the side effect of re-producing the depends file)
 $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d
 	@mkdir -p $${$1_OBJECT_DIR}
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
+	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
 
 # Blank rule for depends files to prevent Make from complaining that it
 # can't build `blah.d` (since `blah.o` depends on it).  An empty rule
@@ -59,7 +59,7 @@ $${$1_DEPS} : $${$1_OBJECT_DIR}/%.d : ;
 # Final linker step for $1
 $${BUILD_DIR}/bin/$1 : $${$1_OBJS}
 	@mkdir -p $${BUILD_DIR}/bin/
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $$@ $$^ $${$2_LDFLAGS} $${$1_LDFLAGS}
+	${CXX} ${LDFLAGS} -o $$@ $$^ $${$2_LDFLAGS} $${$1_LDFLAGS}
 
 # Shortcut alias to make $1
 .PHONY : $1
@@ -164,7 +164,7 @@ test_CPPFLAGS := -O0 ${__COMMON_CPPFLAGS} -DUNIT_TEST \
                  -fno-access-control \
                  -I${GTEST_DIR}/include -I${GMOCK_DIR}/include \
                  -I${CPP_COMMON_DIR}/test_utils
-test_LDFLAGS := -lgcov
+test_LDFLAGS := -lgcov --coverage
 
 ifdef JUSTTEST
   EXTRA_TEST_ARGS ?= --gtest_filter=*$(JUSTTEST)*
