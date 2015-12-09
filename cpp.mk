@@ -85,7 +85,7 @@ $${BUILD_DIR}/bin/$1 : $${BUILD_DIR}/obj/gmock-all.o $${BUILD_DIR}/obj/gtest-all
 
 .PHONY : run_$1
 run_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ $$< ${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< ${EXTRA_TEST_ARGS}
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
