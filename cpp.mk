@@ -89,18 +89,18 @@ run_$1 : $${BUILD_DIR}/bin/$1
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
 	@touch $$@
 
 .PHONY : debug_$1
 debug_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
 
 # Valgrind arguments for $1
 $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
 
 $${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
@@ -118,7 +118,7 @@ valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
 
 .PHONY : valgrind_$1
 valgrind_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
 $1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut|^$${GMOCK_DIR}|$${$1_COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
