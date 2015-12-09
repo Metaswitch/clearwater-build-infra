@@ -48,7 +48,7 @@ $1_OBJECT_DIR := $${BUILD_DIR}/$1
 # (which will have the side effect of re-producing the depends file)
 $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d
 	@mkdir -p $${$1_OBJECT_DIR}
-	g++ -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
+	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
 
 # Blank rule for depends files to prevent Make from complaining that it
 # can't build `blah.d` (since `blah.o` depends on it).  An empty rule
@@ -59,7 +59,7 @@ $${$1_DEPS} : $${$1_OBJECT_DIR}/%.d : ;
 # Final linker step for $1
 $${BUILD_DIR}/bin/$1 : $${$1_OBJS}
 	@mkdir -p $${BUILD_DIR}/bin/
-	g++ -o $$@ $$^ $${$2_LDFLAGS} $${$1_LDFLAGS}
+	${CXX} ${LDFLAGS} -o $$@ $$^ $${$2_LDFLAGS} $${$1_LDFLAGS}
 
 # Shortcut alias to make $1
 .PHONY : $1
@@ -85,22 +85,22 @@ $${BUILD_DIR}/bin/$1 : $${BUILD_DIR}/obj/gmock-all.o $${BUILD_DIR}/obj/gtest-all
 
 .PHONY : run_$1
 run_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ $$< ${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< ${EXTRA_TEST_ARGS}
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
 	@touch $$@
 
 .PHONY : debug_$1
 debug_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
 
 # Valgrind arguments for $1
 $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
 
 $${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
@@ -118,7 +118,7 @@ valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
 
 .PHONY : valgrind_$1
 valgrind_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=../usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
 $1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut|^$${GMOCK_DIR}|$${$1_COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
@@ -164,7 +164,7 @@ test_CPPFLAGS := -O0 ${__COMMON_CPPFLAGS} -DUNIT_TEST \
                  -fno-access-control \
                  -I${GTEST_DIR}/include -I${GMOCK_DIR}/include \
                  -I${CPP_COMMON_DIR}/test_utils
-test_LDFLAGS := -lgcov
+test_LDFLAGS := -lgcov --coverage
 
 ifdef JUSTTEST
   EXTRA_TEST_ARGS ?= --gtest_filter=*$(JUSTTEST)*
