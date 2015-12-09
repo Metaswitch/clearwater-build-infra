@@ -44,9 +44,8 @@ $1_DEPS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.d,$${$1_SOURCES})
 # header files)
 $1_OBJECT_DIR := $${BUILD_DIR}/$1
 
-# Depend on the depends file so we'll get rebuilt if it's missing
-# (which will have the side effect of re-producing the depends file)
-$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d
+# Object files are produced by compiling source files
+$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp
 	@mkdir -p $${$1_OBJECT_DIR}
 	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
 
