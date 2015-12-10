@@ -44,17 +44,10 @@ $1_DEPS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.d,$${$1_SOURCES})
 # header files)
 $1_OBJECT_DIR := $${BUILD_DIR}/$1
 
-# Depend on the depends file so we'll get rebuilt if it's missing
-# (which will have the side effect of re-producing the depends file)
-$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp $${BUILD_DIR}/$1/%.d
+# Object files are produced by compiling source files
+$${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp
 	@mkdir -p $${$1_OBJECT_DIR}
 	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
-
-# Blank rule for depends files to prevent Make from complaining that it
-# can't build `blah.d` (since `blah.o` depends on it).  An empty rule
-# is special in Make and causes Make to force the `blah.o` to be re-built
-# (which as above will cause `blah.d` to be rebuilt too).
-$${$1_DEPS} : $${$1_OBJECT_DIR}/%.d : ;
 
 # Final linker step for $1
 $${BUILD_DIR}/bin/$1 : $${$1_OBJS}
