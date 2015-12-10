@@ -117,6 +117,8 @@ valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
 		exit 2 ; \
 	fi
 
+CLEANS += $${BUILD_DIR}/scratch/valgrind.tmp
+
 .PHONY : valgrind_$1
 valgrind_$1 : $${BUILD_DIR}/bin/$1
 	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
