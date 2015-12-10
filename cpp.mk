@@ -124,7 +124,15 @@ valgrind_$1 : $${BUILD_DIR}/bin/$1
 	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
-$1_COVERAGE_ARGS := --object-directory=$(shell pwd) --root $$(shell pwd) --exclude "^ut|^$${GMOCK_DIR}|$${$1_COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
+COMMON_COVERAGE_EXCLUSIONS := ^ut|^$${GMOCK_DIR}
+ifdef $1_COVERAGE_EXCLUSIONS
+	COVERAGE_EXCLUSIONS := $${COMMON_COVERAGE_EXCLUSIONS}|$${$1_COVERAGE_EXCLUSIONS}
+else
+	COVERAGE_EXCLUSIONS := $${COMMON_COVERAGE_EXCLUSIONS}
+endif
+
+REAL_OBJECT_DIR := $(realpath ${BUILD_DIR}/$1)
+$1_COVERAGE_ARGS := --root=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${REAL_OBJECT_DIR}
 
 $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@ || (rm $$@; exit 2)
