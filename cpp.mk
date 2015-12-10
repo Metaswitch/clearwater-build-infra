@@ -148,7 +148,7 @@ CLEANS += $${BUILD_DIR}/scratch/coverage_$1.tmp $${BUILD_DIR}/scratch/coverage_$
 
 .PHONY : coverage_raw_$1
 coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
-	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --keep --sort-percentage
+	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --sort-percentage
 
 test : run_$1
 valgrind : valgrind_$1
