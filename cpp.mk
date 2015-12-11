@@ -124,8 +124,7 @@ else
 	COVERAGE_EXCLUSIONS := $${COMMON_COVERAGE_EXCLUSIONS}
 endif
 
-REAL_OBJECT_DIR := $(realpath ${BUILD_DIR}/$1)
-$1_COVERAGE_ARGS := --root=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${REAL_OBJECT_DIR}
+$1_COVERAGE_ARGS := --root=$(shell pwd) --object-directory=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
 
 $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@ || (rm $$@; exit 2)
