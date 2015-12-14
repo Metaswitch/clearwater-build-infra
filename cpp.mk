@@ -126,6 +126,8 @@ endif
 
 $1_COVERAGE_ARGS := --root=$(shell pwd) --object-directory=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
 
+$1_EXCLUSION_FILE ?= ut/coverage-not-yet
+
 $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@ || (rm $$@; exit 2)
 
@@ -137,7 +139,7 @@ coverage_check_$1 : $${BUILD_DIR}/$1/coverage.xml
 		| grep filename= \
 		| cut -d\" -f2 \
 		| sort > $${BUILD_DIR}/scratch/coverage_$1.tmp
-	@sort ut/coverage-not-yet | comm -23 $${BUILD_DIR}/scratch/coverage_$1.tmp - > $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp
+	@sort $${$1_EXCLUSION_FILE} | comm -23 $${BUILD_DIR}/scratch/coverage_$1.tmp - > $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp
 	@if grep -q ^ $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp ; then \
 		echo "Error: some files unexpectedly have less than 100% code coverage:" ; \
 		cat $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp ; \
