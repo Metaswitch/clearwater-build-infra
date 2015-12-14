@@ -77,24 +77,26 @@ $(call common_target,$1,test)
 
 $${BUILD_DIR}/bin/$1 : $${BUILD_DIR}/obj/gmock-all.o $${BUILD_DIR}/obj/gtest-all.o
 
+$1_LD_LIBRARY_PATH ?= ${ROOT}/usr/lib
+
 .PHONY : run_$1
 run_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< ${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} $$< ${EXTRA_TEST_ARGS}
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=${ROOT}/usr/lib/ $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
 	@touch $$@
 
 .PHONY : debug_$1
 debug_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=${ROOT}/usr/lib/ gdb --args $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} gdb --args $$< $${EXTRA_TEST_ARGS}
 
 # Valgrind arguments for $1
 $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
 
 $${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*"
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
@@ -114,7 +116,7 @@ CLEANS += $${BUILD_DIR}/scratch/valgrind.tmp
 
 .PHONY : valgrind_$1
 valgrind_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=${ROOT}/usr/lib/ valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} $$< $${EXTRA_TEST_ARGS}
 
 # Coverage arguments for $1
 COMMON_COVERAGE_EXCLUSIONS := ^ut|^$${GMOCK_DIR}
@@ -125,6 +127,8 @@ else
 endif
 
 $1_COVERAGE_ARGS := --root=$(shell pwd) --object-directory=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
+
+$1_EXCLUSION_FILE ?= ut/coverage-not-yet
 
 $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --xml > $$@ || (rm $$@; exit 2)
@@ -137,7 +141,7 @@ coverage_check_$1 : $${BUILD_DIR}/$1/coverage.xml
 		| grep filename= \
 		| cut -d\" -f2 \
 		| sort > $${BUILD_DIR}/scratch/coverage_$1.tmp
-	@sort ut/coverage-not-yet | comm -23 $${BUILD_DIR}/scratch/coverage_$1.tmp - > $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp
+	@sort $${$1_EXCLUSION_FILE} | comm -23 $${BUILD_DIR}/scratch/coverage_$1.tmp - > $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp
 	@if grep -q ^ $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp ; then \
 		echo "Error: some files unexpectedly have less than 100% code coverage:" ; \
 		cat $${BUILD_DIR}/scratch/coverage_$1_filtered.tmp ; \
