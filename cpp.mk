@@ -59,7 +59,7 @@ $${BUILD_DIR}/bin/$1 : $${$1_OBJS}
 $1 : $${BUILD_DIR}/bin/$1
 
 # Include depends files from $1
-DEPENDS += $${$1_DEPS}}
+DEPENDS += $${$1_DEPS}
 
 # Clean up for $1
 CLEANS += $${BUILD_DIR}/bin/$1
