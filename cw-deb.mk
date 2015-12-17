@@ -72,7 +72,7 @@ CW_SIGNER ?= maintainers@projectclearwater.org
 CW_SIGNER_REAL := Project Clearwater Maintainers
 
 # Commands to build a package repo.
-CW_BUILD_REPO := dpkg-scanpackages --multiversion binary /dev/null > binary/Packages; \
+CW_BUILD_REPO := dpkg-scanpackages --multiversion binary > binary/Packages; \
                  gzip -9c binary/Packages >binary/Packages.gz;                        \
                  rm -f binary/Release binary/Release.gpg;                             \
                  apt-ftparchive -o APT::FTPArchive::Release::Codename=binary          \
