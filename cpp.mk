@@ -136,7 +136,7 @@ $${BUILD_DIR}/$1/coverage.xml : $${BUILD_DIR}/$1/.$1_already_run
 .PHONY : coverage_check_$1
 coverage_check_$1 : $${BUILD_DIR}/$1/coverage.xml
 	@mkdir -p $${BUILD_DIR}/scratch/
-	@xmllint --xpath '//*[count(lines/line) > 0 and @line-rate != "1.0" ]/@filename' $$< \
+	@xmllint --xpath '//*[count(lines/line) > 0 and @line-rate != "1.0"]/@filename' $$< \
 		| tr ' ' '\n' \
 		| grep filename= \
 		| cut -d\" -f2 \
