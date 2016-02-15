@@ -126,7 +126,9 @@ else
 	COVERAGE_EXCLUSIONS := $${COMMON_COVERAGE_EXCLUSIONS}
 endif
 
-$1_COVERAGE_ARGS := --root=$(shell pwd) --object-directory=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
+# Default coverage root - makefiles can override this if necessary
+COVERAGE_ROOT ?= $(shell pwd)
+$1_COVERAGE_ARGS := --root=$${COVERAGE_ROOT} --object-directory=$(shell pwd) --exclude="$${COVERAGE_EXCLUSIONS}" $${$1_OBJECT_DIR}
 
 $1_EXCLUSION_FILE ?= ut/coverage-not-yet
 
