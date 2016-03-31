@@ -176,7 +176,7 @@ test_CPPFLAGS := -O0 ${__COMMON_CPPFLAGS} -DUNIT_TEST \
 test_LDFLAGS := -lgcov --coverage
 
 ifdef JUSTTEST
-  EXTRA_TEST_ARGS ?= --gtest_filter=*$(JUSTTEST)*
+  EXTRA_TEST_ARGS ?= --gtest_filter=$(JUSTTEST)
 endif
 
 ${BUILD_DIR}/obj/gmock-all.o : ${GMOCK_DIR}/src/gmock-all.cc ${GMOCK_DIR}/include/gmock/*.h ${GMOCK_DIR}/include/gmock/internal/*.h
