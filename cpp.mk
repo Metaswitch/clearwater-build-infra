@@ -85,6 +85,7 @@ run_$1 : $${BUILD_DIR}/bin/$1
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
 $${BUILD_DIR}/$1/.$1_already_run : $${BUILD_DIR}/bin/$1
+	rm -f $${BUILD_DIR}/$1/*.gcda
 	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} $$< --gtest_output=xml:$${BUILD_DIR}/$1/gtest_output.xml
 	@touch $$@
 
