@@ -81,6 +81,7 @@ $1_LD_LIBRARY_PATH ?= ${ROOT}/usr/lib
 
 .PHONY : run_$1
 run_$1 : $${BUILD_DIR}/bin/$1
+	rm -f $${BUILD_DIR}/$1/*.gcda
 	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} $$< ${EXTRA_TEST_ARGS}
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
