@@ -190,6 +190,10 @@ ${BUILD_DIR}/obj/gtest-all.o : ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/includ
 
 CLEAN_DIRS += ${BUILD_DIR}/obj
 
+# In case there are no test/non-test targets for this project
+TARGETS ?=
+TEST_TARGETS ?=
+
 # Print out the generate Makefile snippet for debugging purposes
 ifdef DEBUG_MAKEFILE
 $(foreach target,${TARGETS},$(info $(call common_target,${target},release)))
