@@ -19,7 +19,7 @@
 #   CLEAN_DIRS          - All directories listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
-.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
+.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck
 
 # Makefiles can override these if needed
 ROOT ?= ..
@@ -94,6 +94,7 @@ $1_LD_LIBRARY_PATH ?= ${ROOT}/usr/lib
 
 .PHONY : run_$1
 run_$1 : $${BUILD_DIR}/bin/$1
+	rm -f $${BUILD_DIR}/$1/*.gcda
 	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} $$< ${EXTRA_TEST_ARGS}
 
 # This sentinel file proves the tests have *all* been run on this build (mostly for coverage)
@@ -169,12 +170,17 @@ CLEANS += $${BUILD_DIR}/scratch/coverage_$1.tmp $${BUILD_DIR}/scratch/coverage_$
 coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --sort-percentage
 
+.PHONY : cppcheck_$1
+cppcheck_$1 :
+	cppcheck --enable=all --quiet -i ut -I ../include -I ../modules/cpp-common/include .
+
 test : run_$1
 valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
 clangtidy: clangtidy_$1
+cppcheck : cppcheck_$1
 
 CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
 
@@ -202,6 +208,10 @@ ${BUILD_DIR}/obj/gtest-all.o : ${GTEST_DIR}/src/gtest-all.cc ${GTEST_DIR}/includ
 	${CXX} ${test_CPPFLAGS} -I${GTEST_DIR}/include -I${GTEST_DIR}/include -I${GTEST_DIR} -c $< -o $@
 
 CLEAN_DIRS += ${BUILD_DIR}/obj
+
+# In case there are no test/non-test targets for this project
+TARGETS ?=
+TEST_TARGETS ?=
 
 # Print out the generate Makefile snippet for debugging purposes
 ifdef DEBUG_MAKEFILE
