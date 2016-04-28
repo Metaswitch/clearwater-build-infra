@@ -38,6 +38,7 @@ define common_target
 # Calculate the object names for the $1 build
 $1_OBJS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.o,$${$1_SOURCES})
 $1_DEPS := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.d,$${$1_SOURCES})
+$1_CLANGTIDY := $$(patsubst %.cpp,$${BUILD_DIR}/$1/%.clangtidy,$${$1_SOURCES})
 
 # Create alias for the object directory this allows the parent Makefile
 # to add extra pre-requisites to specific objects (e.g. auto-generated
@@ -48,6 +49,12 @@ $1_OBJECT_DIR := $${BUILD_DIR}/$1
 $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp
 	@mkdir -p $${$1_OBJECT_DIR}
 	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
+
+# clang-tidy files are produced by analyzing source files
+$${$1_CLANGTIDY} : $${$1_OBJECT_DIR}/%.clangtidy : %.cpp
+	@mkdir -p $${$1_OBJECT_DIR}
+	clang-tidy-3.8 -checks='*,-cppcoreguidelines-pro*,-modernize-use-auto,-modernize-use-nullptr,-llvm-include-order' $$< -- ${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} > $$@
+
 
 # Final linker step for $1
 $${BUILD_DIR}/bin/$1 : $${$1_OBJS}
@@ -64,6 +71,12 @@ DEPENDS += $${$1_DEPS}
 # Clean up for $1
 CLEANS += $${BUILD_DIR}/bin/$1
 CLEAN_DIRS += $${$1_OBJECT_DIR}
+
+.PHONY: clangtidy_$1
+clangtidy_$1: $${$1_CLANGTIDY}
+	cat $${$1_CLANGTIDY}
+
+CLEANS += $${$1_CLANGTIDY}
 
 endef
 
@@ -166,6 +179,7 @@ valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
+clangtidy: clangtidy_$1
 cppcheck : cppcheck_$1
 
 CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
