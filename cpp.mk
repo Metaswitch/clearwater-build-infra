@@ -19,7 +19,7 @@
 #   CLEAN_DIRS          - All directories listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
-.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean
+.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck
 
 # Makefiles can override these if needed
 ROOT ?= ..
@@ -157,11 +157,16 @@ CLEANS += $${BUILD_DIR}/scratch/coverage_$1.tmp $${BUILD_DIR}/scratch/coverage_$
 coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --sort-percentage
 
+.PHONY : cppcheck_$1
+cppcheck_$1 :
+	cppcheck --enable=all --quiet -i ut -I ../include -I ../modules/cpp-common/include .
+
 test : run_$1
 valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
+cppcheck : cppcheck_$1
 
 CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
 
