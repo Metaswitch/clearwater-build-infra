@@ -53,7 +53,7 @@ $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp
 # clang-tidy files are produced by analyzing source files
 $${$1_CLANGTIDY} : $${$1_OBJECT_DIR}/%.clangtidy : %.cpp
 	@mkdir -p $${$1_OBJECT_DIR}
-	clang-tidy-3.8 -checks='*,-cppcoreguidelines-pro-type-vararg,-modernize-use-auto,-cppcoreguidelines-pro-bounds-array-to-pointer-decay' $$< -- ${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} > $$@
+	clang-tidy-3.8 -checks='*,-cppcoreguidelines-pro*,-modernize-use-auto,-modernize-use-nullptr,-llvm-include-order' $$< -- ${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} > $$@
 
 
 # Final linker step for $1
@@ -72,11 +72,11 @@ DEPENDS += $${$1_DEPS}
 CLEANS += $${BUILD_DIR}/bin/$1
 CLEAN_DIRS += $${$1_OBJECT_DIR}
 
-.PHONY: clangtidy_$1 clangtidy_generate_$1
-clangtidy_generate_$1: $${$1_CLANGTIDY}
-
-clangtidy_$1: clangtidy_generate_$1
+.PHONY: clangtidy_$1
+clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
+
+CLEANS += $${$1_CLANGTIDY}
 
 endef
 
@@ -174,6 +174,7 @@ valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
+clangtidy: clangtidy_$1
 
 CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
 
