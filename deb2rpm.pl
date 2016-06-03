@@ -102,6 +102,9 @@ EOF
     if (-e "debian/$package.install") {
       print $out "install_to_buildroot < %{rootdir}/debian/$package.install\n";
     }
+    if (-e "debian/$package.dirs") {
+      print $out "dirs_to_buildroot < %{rootdir}/debian/$package.dirs\n";
+    }
     if (-e "debian/$package.init.d") {
       print $out "copy_to_buildroot debian/$package.init.d /etc/init.d/$package\n";
     }

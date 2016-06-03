@@ -21,9 +21,13 @@ function install_to_buildroot {
   xargs -r -I {} bash -c 'copy_to_buildroot "$(cut -d\  -f 1 <<< "{}")" "$(cut -d\  -f 2 <<< "{}")"'
 }
 
+function dirs_to_buildroot {
+  xargs -r -I {} mkdir -p ${CW_RPM_UTILS_BUILDROOT}/{}
+}
+
 function build_files_list {
   { cd ${CW_RPM_UTILS_BUILDROOT}
-    find . -type f
+    find . -type f -o -type d -empty
     cd - > /dev/null
   } |
   sed -e 's/^\.//g' |
