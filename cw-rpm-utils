@@ -13,7 +13,7 @@ function setup_buildroot {
 
 function copy_to_buildroot {
   mkdir -p ${CW_RPM_UTILS_BUILDROOT}$2
-  cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2
+  cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2/$3
 }
 
 function install_to_buildroot {
@@ -32,6 +32,7 @@ function build_files_list {
   } |
   sed -e 's/^\.//g' |
   sed -e 's/^\/etc\//%config \/etc\//g' |
+  sed -e 's/^%config \/etc\/init.d\//%config %attr(755, -, -) \/etc\/init.d\//g' |
   egrep -v "^/LICENSE$"
   echo %doc /LICENSE
 }
