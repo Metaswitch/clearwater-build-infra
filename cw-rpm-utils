@@ -3,12 +3,13 @@
 # script - the !/bin/bash comment above is just so that vim can do
 # syntax-highlighting correctly.
 
-export CW_RPM_UTILS_TOPDIR=$1
-export CW_RPM_UTILS_BUILDROOT=$2
+export CW_RPM_UTILS_PACKAGE=$1
+export CW_RPM_UTILS_TOPDIR=$2
+export CW_RPM_UTILS_BUILDROOT=$3
 
 function setup_buildroot {
   rm -rf ${CW_RPM_UTILS_BUILDROOT}
-  copy_to_buildroot build-infra/LICENSE
+  copy_to_buildroot build-infra/LICENSE /usr/share/licenses/$CW_RPM_UTILS_PACKAGE
 }
 
 function copy_to_buildroot {
@@ -26,13 +27,14 @@ function dirs_to_buildroot {
 }
 
 function build_files_list {
-  { cd ${CW_RPM_UTILS_BUILDROOT}
-    find . -type f -o -type d -empty
-    cd - > /dev/null
-  } |
+  cd ${CW_RPM_UTILS_BUILDROOT}
+  find . -type f -a -executable |
+  sed -e 's/^\./%attr(755, -, -) /g' |
+  sed -e 's/ \(\/etc\/\)/ %config \1/g'
+  find . -type f -a ! -executable -o -type d -empty |
   sed -e 's/^\.//g' |
-  sed -e 's/^\/etc\//%config \/etc\//g' |
-  sed -e 's/^%config \/etc\/init.d\//%config %attr(755, -, -) \/etc\/init.d\//g' |
-  egrep -v "^/LICENSE$"
-  echo %doc /LICENSE
+  sed -e 's/^\(\/etc\/\)/%config \1/g' |
+  sed -e 's/ \(\/etc\/init.d\/\)/ %attr(755, -, -) \1/g' |
+  sed -e 's/^\(\/usr\/share\/licenses\/[^/]*\/LICENSE\)/%doc \1/g'
+  cd - > /dev/null
 }

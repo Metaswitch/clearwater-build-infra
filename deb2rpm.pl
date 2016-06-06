@@ -68,12 +68,12 @@ EOF
       $build_depends =~ s/(^ | $)//g;
       print $out "BuildRequires:  $build_depends\n";
     }
-    if (defined($depends)) {
-      $depends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
-      $depends =~ s/ *, */ /g;
-      $depends =~ s/(^ | $)//g;
-      print $out "Requires:       $depends\n";
-    }
+    $depends = $depends // "";
+    $depends = "redhat-lsb-core $depends"; # All packages (or at least any that have init.d scripts) need LSB
+    $depends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
+    $depends =~ s/ *, */ /g;
+    $depends =~ s/(^ | $)//g;
+    print $out "Requires:       $depends\n";
     if (defined($recommends)) {
       $recommends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
       $recommends =~ s/ *, */ /g;
@@ -96,7 +96,7 @@ EOF
 $description
 
 %install
-. %{rootdir}/build-infra/cw-rpm-utils %{rootdir} %{buildroot}
+. %{rootdir}/build-infra/cw-rpm-utils $package %{rootdir} %{buildroot}
 setup_buildroot
 EOF
     if (-e "debian/$package.install") {
