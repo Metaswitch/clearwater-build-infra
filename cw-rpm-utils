@@ -13,7 +13,7 @@ function setup_buildroot {
 }
 
 function copy_to_buildroot {
-  mkdir -p ${CW_RPM_UTILS_BUILDROOT}$2
+  mkdir -p ${CW_RPM_UTILS_BUILDROOT}/$2
   cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2/$3
 }
 
