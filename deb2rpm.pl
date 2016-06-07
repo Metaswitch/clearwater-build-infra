@@ -106,10 +106,13 @@ EOF
       print $out "dirs_to_buildroot < %{rootdir}/debian/$package.dirs\n";
     }
     if (-e "debian/$package.init.d") {
-      print $out "copy_to_buildroot debian/$package.init.d /etc/init.d/$package\n";
+      print $out "copy_to_buildroot debian/$package.init.d /etc/init.d $package\n";
+    }
+    if (-e "debian/$package.service") {
+      print $out "copy_to_buildroot debian/$package.service /etc/systemd/system\n";
     }
     if (-e "debian/$package.logrotate") {
-      print $out "copy_to_buildroot debian/$package.logrotate /etc/logrotate.d/$package\n";
+      print $out "copy_to_buildroot debian/$package.logrotate /etc/logrotate.d $package\n";
     }
     if (-e "debian/$package.preinst") {
       print " - Check debian/$package.preinst!\n";
