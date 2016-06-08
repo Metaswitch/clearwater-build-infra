@@ -35,14 +35,18 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 # Caller must set the following:
-# PKG_COMPONENT        - name of overall component for manifest
+# PKG_COMPONENT or RPM_COMPONENT (RPM_COMPONENT takes precedence)
+#                      - name of overall component for manifest
 #                        (e.g., sprout)
-# PKG_MAJOR_VERSION    - major version number for package (e.g., 1.0)
-# PKG_NAMES            - space-separated base names of packages
+# PKG_MAJOR_VERSION or RPM_MAJOR_VERSION (RPM_MAJOR_VERSION takes precedence)
+#                      - major version number for package (e.g., 1.0)
+# PKG_NAMES or RPM_NAMES (RPM_NAMES takes precedence)
+#                      - space-separated base names of packages
 #                        (e.g., sprout sprout-dbg)
 
 # Caller may also set the following:
-# PKG_MINOR_VERSION    - minor version number for package (default is current timestamp)
+# PKG_MINOR_VERSION or RPM_MINOR_VERSION (RPM_MINOR_VERSION takes precedence)
+#                      - minor version number for package (default is current timestamp)
 # REPO_DIR             - path to repository to move packages to (default is unset,
 #                        meaning don't move packages)
 # REPO_SERVER          - username and server to scp pacakges to (default is unset,
@@ -60,6 +64,12 @@
 
 # Include common definitions
 include build-infra/cw-pkg.mk
+
+# Default RPM_* from PKG_*
+RPM_COMPONENT ?= $(PKG_COMPONENT)
+RPM_MAJOR_VERSION ?= $(PKG_MAJOR_VERSION)
+RPM_MINOR_VERSION ?= $(PKG_MINOR_VERSION)
+RPM_NAMES ?= $(PKG_NAMES)
 
 RPM_ARCH := $(shell rpmbuild -E %{_arch})
 
@@ -96,19 +106,18 @@ rpm-build:
         else\
 		echo "- built from revision $$(git rev-parse HEAD)" >>rpm/changelog;\
 	fi
-	for pkg in ${PKG_NAMES} ; do\
+	for pkg in ${RPM_NAMES} ; do\
 	  rpmbuild -ba rpm/$${pkg}.spec\
             --define "_topdir $(shell pwd)/rpm"\
             --define "rootdir $(shell pwd)"\
-            --define "PKG_MAJOR_VERSION ${PKG_MAJOR_VERSION}"\
-            --define "PKG_MINOR_VERSION ${PKG_MINOR_VERSION}" || exit 1;\
+            --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
+            --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}" || exit 1;\
 	done
 
-# Move to repository.  Must be the same make invocation as rpm-build, unless
-# PKG_VERSION is specified explicitly.  If REPO_SERVER is specified,
-# known_hosts on this server must include $REPO_SERVER's server key, and
-# authorized_keys on $REPO_SERVER must include this server's user key.
-# ssh-copy-id can be used to achieve this.
+# Move to repository.  If REPO_SERVER is specified, known_hosts on this
+# server must include $REPO_SERVER's server key, and authorized_keys on
+# $REPO_SERVER must include this server's user key.  ssh-copy-id can be
+# used to achieve this.
 .PHONY: rpm-move
 rpm-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                    \
@@ -116,8 +125,8 @@ rpm-move:
 	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                          \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/noarch/RPMS' '${REPO_DIR}/${RPM_ARCH}/RPMS' ;                            \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/noarch/RPMS/%-*', ${PKG_NAMES})                             \
-	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${PKG_NAMES}) ;                      \
+	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/noarch/RPMS/%-*', ${RPM_NAMES})                             \
+	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES}) ;                      \
 	    fi ;                                                                                                              \
 	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null ; then                                                                 \
 	      scp rpm/RPMS/noarch/*.rpm ${REPO_SERVER}:${REPO_DIR}/noarch/RPMS/ ;                                             \
@@ -129,8 +138,8 @@ rpm-move:
 	  else                                                                                                                \
 	    mkdir -p ${REPO_DIR}/noarch/RPMS ${REPO_DIR}/${RPM_ARCH}/RPMS ;                                                   \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      rm -f $(patsubst %, ${REPO_DIR}/noarch/RPMS/%-*, ${PKG_NAMES})                                                  \
-	            $(patsubst %, ${REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${PKG_NAMES}) ;                                           \
+	      rm -f $(patsubst %, ${REPO_DIR}/noarch/RPMS/%-*, ${RPM_NAMES})                                                  \
+	            $(patsubst %, ${REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${RPM_NAMES}) ;                                           \
 	    fi ;                                                                                                              \
 	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1 ; then                                                            \
 	      mv rpm/RPMS/noarch/*.rpm ${REPO_DIR}/noarch/RPMS/ ;                                                             \
@@ -149,8 +158,8 @@ rpm-move-hardened:
 	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                        \
 	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/noarch/RPMS' '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS' ; \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/noarch/RPMS/%-*', ${PKG_NAMES})           \
-	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${PKG_NAMES}) ;    \
+	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/noarch/RPMS/%-*', ${RPM_NAMES})           \
+	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES}) ;    \
 	    fi ;                                                                                                              \
 	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null ; then                                                                 \
 	      scp rpm/RPMS/noarch/*.rpm ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/noarch/RPMS/ ;                           \
@@ -162,8 +171,8 @@ rpm-move-hardened:
 	  else                                                                                                                \
 	    mkdir -p ${HARDENED_REPO_DIR}/noarch/RPMS ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS ;                                 \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/noarch/RPMS/%-*, ${PKG_NAMES})                                         \
-	            $(patsubst %, ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${PKG_NAMES}) ;                                  \
+	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/noarch/RPMS/%-*, ${RPM_NAMES})                                         \
+	            $(patsubst %, ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${RPM_NAMES}) ;                                  \
 	    fi ;                                                                                                              \
 	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1 ; then                                                            \
 	      mv rpm/RPMS/noarch/*.rpm ${HARDENED_REPO_DIR}/noarch/RPMS/ ;                                                    \

@@ -1,5 +1,5 @@
-Version:        %{PKG_MAJOR_VERSION}
-Release:        %{PKG_MINOR_VERSION}
+Version:        %{RPM_MAJOR_VERSION}
+Release:        %{RPM_MINOR_VERSION}
 License:        "GPLv3+ with exceptions"
 URL:            http://projectclearwater.org
 AutoReqProv:    no

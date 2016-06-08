@@ -35,14 +35,18 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 # Caller must set the following:
-# PKG_COMPONENT        - name of overall component for manifest
+# PKG_COMPONENT or DEB_COMPONENT (DEB_COMPONENT takes precedence)
+#                      - name of overall component for manifest
 #                        (e.g., sprout)
-# PKG_MAJOR_VERSION    - major version number for package (e.g., 1.0)
-# PKG_NAMES            - space-separated base names of packages
+# PKG_MAJOR_VERSION or DEB_MAJOR_VERSION (DEB_MAJOR_VERSION takes precedence)
+#                      - major version number for package (e.g., 1.0)
+# PKG_NAMES or DEB_NAMES (DEB_NAMES takes precedence)
+#                      - space-separated base names of packages
 #                        (e.g., sprout sprout-dbg)
 
 # Caller may also set the following:
-# PKG_MINOR_VERSION    - minor version number for package (default is current timestamp)
+# PKG_MINOR_VERSION or DEB_MINOR_VERSION (DEB_MINOR_VERSION takes precedence)
+#                      - minor version number for package (default is current timestamp)
 # REPO_DIR             - path to repository to move packages to (default is unset,
 #                        meaning don't move packages)
 # REPO_SERVER          - username and server to scp pacakges to (default is unset,
@@ -60,6 +64,12 @@
 
 # Include common definitions
 include build-infra/cw-pkg.mk
+
+# Default DEB_* from PKG_*
+DEB_COMPONENT ?= $(PKG_COMPONENT)
+DEB_MAJOR_VERSION ?= $(PKG_MAJOR_VERSION)
+DEB_MINOR_VERSION ?= $(PKG_MINOR_VERSION)
+DEB_NAMES ?= $(PKG_NAMES)
 
 # Commands to build a package repo.
 DEB_BUILD_REPO := dpkg-scanpackages --multiversion binary > binary/Packages; \
@@ -79,7 +89,7 @@ deb-only: deb-build deb-move deb-move-hardened
 # Build the .deb files in ../*.deb
 .PHONY: deb-build
 deb-build:
-	echo "${PKG_COMPONENT} (${PKG_VERSION}) unstable; urgency=low" >debian/changelog
+	echo "${DEB_COMPONENT} (${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}) unstable; urgency=low" >debian/changelog
 	# If this is built from a git@github.com: URL then output Git instructions for accessing the build tree
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
 		echo "  * build from $$(git config --get remote.origin.url|sed -e 's#^git@\([^:]*\):\([^/]*\)\([^.]*\)[.]git#https://\1/\2\3/tree/#')$$(git rev-parse HEAD)" >>debian/changelog;\
@@ -113,48 +123,48 @@ endif
 	debuild --no-lintian -b -uc -us
 
 # Move to repository.  Must be the same make invocation as deb-build, unless
-# PKG_VERSION is specified explicitly.  If REPO_SERVER is specified,
+# DEB_MINOR_VERSION is specified explicitly.  If REPO_SERVER is specified,
 # known_hosts on this server must include $REPO_SERVER's server key, and
 # authorized_keys on $REPO_SERVER must include this server's user key.
 # ssh-copy-id can be used to achieve this.
 .PHONY: deb-move
 deb-move:
-	@if [ "${REPO_DIR}" != "" ] ; then                                                                                              \
-	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                          \
-	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                    \
-	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                          \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                       \
-	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${PKG_NAMES}) ;                                          \
-	    fi ;                                                                                                                        \
-	    scp $(patsubst %, ../%_${PKG_VERSION}_*.deb, ${PKG_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;                             \
-	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                   \
-	  else                                                                                                                          \
-	    mkdir -p ${REPO_DIR}/binary ;                                                                                               \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                       \
-	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${PKG_NAMES}) ;                                                               \
-	    fi ;                                                                                                                        \
-	    for pkg in ${PKG_NAMES} ; do mv ../$${pkg}_${PKG_VERSION}_*.deb ${REPO_DIR}/binary; done ;                                  \
-	    cd ${REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                       \
-	  fi                                                                                                                            \
+	@if [ "${REPO_DIR}" != "" ] ; then                                                                                                               \
+	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                                           \
+	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                                     \
+	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                                           \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
+	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                                           \
+	    fi ;                                                                                                                                         \
+	    scp $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;                   \
+	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                    \
+	  else                                                                                                                                           \
+	    mkdir -p ${REPO_DIR}/binary ;                                                                                                                \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
+	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                                                \
+	    fi ;                                                                                                                                         \
+	    for pkg in ${DEB_NAMES} ; do mv ../$${pkg}_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb ${REPO_DIR}/binary; done ;                        \
+	    cd ${REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                                        \
+	  fi                                                                                                                                             \
 	fi
 
 .PHONY: deb-move-hardened
 deb-move-hardened:
-	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                                     \
-	  if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                 \
-	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                  \
-	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                        \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                       \
-	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${PKG_NAMES}) ;                        \
-	    fi ;                                                                                                                        \
-	    scp $(patsubst %, ../%_${PKG_VERSION}_*.deb, ${PKG_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;           \
-	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                 \
-	  else                                                                                                                          \
-	    mkdir -p ${HARDENED_REPO_DIR}/binary ;                                                                                      \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                       \
-	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${PKG_NAMES}) ;                                                      \
-	    fi ;                                                                                                                        \
-	    for pkg in ${PKG_NAMES} ; do mv ../$${pkg}_${PKG_VERSION}_*.deb ${HARDENED_REPO_DIR}/binary; done ;                         \
-	    cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                              \
-	  fi                                                                                                                            \
+	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                                                      \
+	  if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                                                  \
+	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                                   \
+	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                         \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
+	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                         \
+	    fi ;                                                                                                                                         \
+	    scp $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ; \
+	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                  \
+	  else                                                                                                                                           \
+	    mkdir -p ${HARDENED_REPO_DIR}/binary ;                                                                                                       \
+	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
+	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                                       \
+	    fi ;                                                                                                                                         \
+	    for pkg in ${DEB_NAMES} ; do mv ../$${pkg}_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb ${HARDENED_REPO_DIR}/binary; done ;               \
+	    cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                               \
+	  fi                                                                                                                                             \
 	 fi
