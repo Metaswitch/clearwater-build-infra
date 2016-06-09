@@ -34,8 +34,10 @@
 # under which the OpenSSL Project distributes the OpenSSL toolkit software,
 # as those licenses appear in the file LICENSE-OPENSSL.
 
-PKG_MINOR_VERSION ?= $(shell date +%y%m%d.%H%M%S)
-PKG_VERSION := ${PKG_MAJOR_VERSION}-${PKG_MINOR_VERSION}
+ifeq ($(origin PKG_MINOR_VERSION), undefined)
+# Need to use := here so that we evaluate it now, not each time we need it
+PKG_MINOR_VERSION := $(shell date +%y%m%d.%H%M%S)
+endif
 
 # Package maintainer, and owner of the signing key.
 CW_SIGNER ?= maintainers@projectclearwater.org
