@@ -2,6 +2,7 @@ Version:        %{RPM_MAJOR_VERSION}
 Release:        %{RPM_MINOR_VERSION}
 License:        "GPLv3+ with exceptions"
 URL:            http://projectclearwater.org
+Packager:       %{RPM_SIGNER_REAL} <%{RPM_SIGNER}>
 AutoReqProv:    no
 
 # Turn off the brp-python-bytecompile script

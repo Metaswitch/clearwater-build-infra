@@ -111,7 +111,9 @@ rpm-build:
             --define "_topdir $(shell pwd)/rpm"\
             --define "rootdir $(shell pwd)"\
             --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
-            --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}" || exit 1;\
+            --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}"\
+            --define "RPM_SIGNER ${CW_SIGNER}"\
+            --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" || exit 1;\
 	done
 
 # Move to repository.  If REPO_SERVER is specified, known_hosts on this
