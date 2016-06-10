@@ -71,7 +71,7 @@ RPM_MAJOR_VERSION ?= $(PKG_MAJOR_VERSION)
 RPM_MINOR_VERSION ?= $(PKG_MINOR_VERSION)
 RPM_NAMES ?= $(PKG_NAMES)
 
-RPM_ARCH := $(shell rpmbuild -E %{_arch})
+RPM_ARCH := $(shell rpmbuild -E %{_arch} 2>/dev/null)
 
 # Commands to build an RPM package repo.
 RPM_BUILD_REPO := createrepo .
