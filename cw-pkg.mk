@@ -35,7 +35,8 @@
 # as those licenses appear in the file LICENSE-OPENSSL.
 
 ifeq ($(origin PKG_MINOR_VERSION), undefined)
-# Need to use := here so that we evaluate it now, not each time we need it
+# Need to use := here so that we evaluate it now, not each time we need it.
+# (There's no "evaluate now, but only if it's not already defined" operator.)
 PKG_MINOR_VERSION := $(shell date +%y%m%d.%H%M%S)
 endif
 

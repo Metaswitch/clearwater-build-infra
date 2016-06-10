@@ -76,7 +76,8 @@ RPM_ARCH := $(shell rpmbuild -E %{_arch})
 # Commands to build an RPM package repo.
 RPM_BUILD_REPO := createrepo .
 ifeq ($(CW_SIGNED), Y)
-RPM_BUILD_REPO := $(RPM_BUILD_REPO) ; gpg -abs -u $(CW_SIGNER) repodata/repomd.xml
+RPM_BUILD_REPO := $(RPM_BUILD_REPO) ; \
+                  gpg -abs -u $(CW_SIGNER) repodata/repomd.xml
 endif
 
 # Build and move to the repository server (if present).
@@ -88,7 +89,7 @@ rpm-only: rpm-build rpm-move rpm-move-hardened
 rpm-build:
 	# Clear out old RPMs
 	rm -rf rpm/SRPMS/*
-	rm -rf rpm/RPMS/$${RPM_ARCH}/*
+	rm -rf rpm/RPMS/*
 	# If this is built from a git@github.com: URL then output Git instructions for accessing the build tree
 	echo "* $$(date -u +"%a %b %d %Y") $(CW_SIGNER_REAL) <$(CW_SIGNER)>" >rpm/changelog;\
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
@@ -103,18 +104,21 @@ rpm-build:
 		echo "    $$ git submodule update --init" >>rpm/changelog;\
 		echo "      ..."  >>rpm/changelog;\
 		echo "    $$"  >>rpm/changelog;\
-        else\
+	else\
 		echo "- built from revision $$(git rev-parse HEAD)" >>rpm/changelog;\
 	fi
 	for pkg in ${RPM_NAMES} ; do\
-	  rpmbuild -ba rpm/$${pkg}.spec\
-            --define "_topdir $(shell pwd)/rpm"\
-            --define "rootdir $(shell pwd)"\
-            --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
-            --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}"\
-            --define "RPM_SIGNER ${CW_SIGNER}"\
-            --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" || exit 1;\
+		rpmbuild -ba rpm/$${pkg}.spec\
+        	         --define "_topdir $(shell pwd)/rpm"\
+        	         --define "rootdir $(shell pwd)"\
+        	         --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
+        	         --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}"\
+        	         --define "RPM_SIGNER ${CW_SIGNER}"\
+        	         --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" || exit 1;\
 	done
+	if [ "$(CW_SIGNED)" = "Y" ] ; then \
+		rpm --addsign --define "_gpg_name ${CW_SIGNER_REAL} <${CW_SIGNER}>" $$(ls rpm/RPMS/noarch/*.rpm 2>/dev/null || true) $$(ls rpm/RPMS/${RPM_ARCH}/*.rpm 2>/dev/null || true) ;\
+	fi
 
 # Move to repository.  If REPO_SERVER is specified, known_hosts on this
 # server must include $REPO_SERVER's server key, and authorized_keys on

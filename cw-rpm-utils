@@ -1,6 +1,10 @@
 #!/bin/bash
 #
 # Utilities for building RPM packages
+# When source-d in, the caller should pass
+# $1 - the package name
+# $2 - the top-level directory (i.e. the root of the repository
+# $3 - the build root (provided by rpmbuild - normally rpm/BUILDROOT)
 #
 # Note that this script is only ever expected to be source-d into another
 # script - the !/bin/bash comment above is just so that vim can do
@@ -42,34 +46,62 @@ export CW_RPM_UTILS_PACKAGE=$1
 export CW_RPM_UTILS_TOPDIR=$2
 export CW_RPM_UTILS_BUILDROOT=$3
 
+# Clears out the package build root directory, and copies in the standard
+# LICENSE file.
 function setup_buildroot {
   rm -rf ${CW_RPM_UTILS_BUILDROOT}
   copy_to_buildroot build-infra/LICENSE /usr/share/licenses/$CW_RPM_UTILS_PACKAGE
 }
 
+# Copies a single file to the package build root directory.
+# $1 - source file path
+# $2 - target directory
+# $3 - target filename (optional)
 function copy_to_buildroot {
   mkdir -p ${CW_RPM_UTILS_BUILDROOT}/$2
   cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2/$3
 }
 
+# Runs through a Debian *.install file, copying all files into the package
+# build root directory.
+# The *.install file should be supplied on stdin.
 function install_to_buildroot {
   export -f copy_to_buildroot
+
+  # Spin through the input line-by-line, calling copy_to_buildroot and passing
+  # the first and second halves of the line as separate parameters.
   xargs -r -I {} bash -c 'copy_to_buildroot "$(cut -d\  -f 1 <<< "{}")" "$(cut -d\  -f 2 <<< "{}")"'
 }
 
+# Runs through a Debian *.dirs file, creating all directories within the
+# package build root directory.
+# The *.dirs file should be supplied on stdin.
 function dirs_to_buildroot {
   xargs -r -I {} mkdir -p ${CW_RPM_UTILS_BUILDROOT}/{}
 }
 
+# Generates the list of files and directories that should be collected up into
+# the final build package, maintaining permissions.
+# Output is on stdout - if you need to modify it, this can be piped through
+# "grep -v" to remove entries, and you can then add new entries in the %files
+# section of your spec file.
 function build_files_list {
   cd ${CW_RPM_UTILS_BUILDROOT}
+
+  # Find all executable files, strip the leading "./", report their attributes
+  # and mark anything below /etc as config.
   find . -type f -a -executable |
   sed -e 's/^\./%attr(755, -, -) /g' |
   sed -e 's/ \(\/etc\/\)/ %config \1/g'
+
+  # Find all non-executable files or empty directories, strip the leading "./",
+  # mark anything below /etc as config, mark anything below /etc/init.d as
+  # executable, and mark the LICENSE file as doc.
   find . -type f -a ! -executable -o -type d -empty |
   sed -e 's/^\.//g' |
   sed -e 's/^\(\/etc\/\)/%config \1/g' |
   sed -e 's/ \(\/etc\/init.d\/\)/ %attr(755, -, -) \1/g' |
   sed -e 's/^\(\/usr\/share\/licenses\/[^/]*\/LICENSE\)/%doc \1/g'
+
   cd - > /dev/null
 }
