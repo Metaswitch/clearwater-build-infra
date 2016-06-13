@@ -60,7 +60,7 @@ EOF
       print $out "BuildArch:      noarch\n";
     }
     if (defined($build_depends)) {
-      $build_depends =~ s/([^() ]*) \(([<=>]+) +([^() ]+)\)/$1$2$3/g;
+      $build_depends =~ s/([^() ]*) \(([<=>]+) +([^() ]+)\)/$1 $2 $3/g;
       $build_depends =~ s/ *, */ /g;
       $build_depends =~ s/debhelper>=8.0.0//g;
       $build_depends =~ s/python2.7/python2-devel python-virtualenv/g;
@@ -70,19 +70,19 @@ EOF
     }
     $depends = $depends // "";
     $depends = "redhat-lsb-core $depends"; # All packages (or at least any that have init.d scripts) need LSB
-    $depends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
+    $depends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1 $2 $3/g;
     $depends =~ s/ *, */ /g;
     $depends =~ s/(^ | $)//g;
     print $out "Requires:       $depends\n";
     if (defined($recommends)) {
-      $recommends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
+      $recommends =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1 $2 $3/g;
       $recommends =~ s/ *, */ /g;
       $recommends =~ s/(^ | $)//g;
       # Recommends isn't supported in our version of rpm - so commented out
       print $out "#Recommends:     $recommends\n";
     }
     if (defined($suggests)) {
-      $suggests =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1$2$3/g;
+      $suggests =~ s/([^() ]*) +\(([<=>]+) +([^() ]+)\)/$1 $2 $3/g;
       $suggests =~ s/ *, */ /g;
       $suggests =~ s/(^ | $)//g;
       # Suggests isn't supported in our version of rpm - so commented out
