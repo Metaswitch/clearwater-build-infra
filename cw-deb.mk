@@ -127,6 +127,16 @@ endif
 # known_hosts on this server must include $REPO_SERVER's server key, and
 # authorized_keys on $REPO_SERVER must include this server's user key.
 # ssh-copy-id can be used to achieve this.
+
+# Shell globs that match the specified packages, and their associated debug
+# packages, respectively. Note that whike all the items in the first glob
+# should match something, this is not true for the second glob (as not all
+# packages have debug packgages). The code below handles this by usng ls to
+# determine what the matches are, and only carrying on if there are some
+# matches.
+LOCAL_DEB_GLOB := $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES})
+LOCAL_DEB_DBG_GLOB := $(patsubst %, ../%-dbg_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES})
+
 .PHONY: deb-move
 deb-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                                               \
@@ -134,16 +144,26 @@ deb-move:
 	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                                     \
 	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                                           \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
-	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                                           \
+	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES})                                                             \
+	                               $(patsubst %, '${REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES});                                                        \
 	    fi ;                                                                                                                                         \
-	    scp $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES}) ${REPO_SERVER}:${REPO_DIR}/binary/ ;                   \
+	    scp ${LOCAL_DEB_GLOB} ${REPO_SERVER}:${REPO_DIR}/binary/ ;                                                                                   \
+	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
+	    if [ -n "$$debug_packages" ]; then                                                                                                           \
+	      scp $$debug_packages ${REPO_SERVER}:${REPO_DIR}/binary/ ;                                                                                  \
+	    fi ;                                                                                                                                         \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                    \
 	  else                                                                                                                                           \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                                                \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
 	      rm -f $(patsubst %, ${REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                                                \
+	      rm -f $(patsubst %, ${REPO_DIR}/binary/%-dbg_*, ${DEB_NAMES}) ;                                                                            \
 	    fi ;                                                                                                                                         \
-	    for pkg in ${DEB_NAMES} ; do mv ../$${pkg}_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb ${REPO_DIR}/binary; done ;                        \
+	    mv ${LOCAL_DEB_GLOB} ${REPO_DIR}/binary;                                                                                                     \
+	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
+	    if [ -n "$$debug_packages" ]; then                                                                                                           \
+	      mv $$debug_packages ${REPO_DIR}/binary/ ;                                                                                                  \
+	    fi ;                                                                                                                                         \
 	    cd ${REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                                        \
 	  fi                                                                                                                                             \
 	fi
@@ -155,16 +175,26 @@ deb-move-hardened:
 	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                                                   \
 	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                         \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
-	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES}) ;                                         \
+	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES})                                           \
+	                                        $(patsubst %, '${HARDENED_REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES})                                       \
 	    fi ;                                                                                                                                         \
-	    scp $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES}) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ; \
+	    scp $(LOCAL_DEB_GLOB) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;                                                                 \
+	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
+	    if [ -n "$$debug_packages" ]; then                                                                                                           \
+	      scp $$debug_packages ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;                                                                \
+	    fi ;                                                                                                                                         \
 	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                  \
 	  else                                                                                                                                           \
 	    mkdir -p ${HARDENED_REPO_DIR}/binary ;                                                                                                       \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
-	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${DEB_NAMES}) ;                                                                       \
+	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${DEB_NAMES})                                                                         \
+	            $(patsubst %, ${HARDENED_REPO_DIR}/binary/%-dbg_*, ${DEB_NAMES})                                                                     \
 	    fi ;                                                                                                                                         \
-	    for pkg in ${DEB_NAMES} ; do mv ../$${pkg}_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb ${HARDENED_REPO_DIR}/binary; done ;               \
+	    mv ${LOCAL_DEB_GLOB} ${HARDENED_REPO_DIR}/binary;                                                                                            \
+	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
+	    if [ -n "$$debug_packages" ]; then                                                                                                           \
+	      mv $$debug_packages ${HARDENED_REPO_DIR}/binary/ ;                                                                                         \
+	    fi ;                                                                                                                                         \
 	    cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                               \
 	  fi                                                                                                                                             \
 	 fi
