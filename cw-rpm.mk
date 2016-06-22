@@ -43,6 +43,10 @@
 # PKG_NAMES or RPM_NAMES (RPM_NAMES takes precedence)
 #                      - space-separated base names of packages
 #                        (e.g., sprout sprout-dbg)
+# PKG_NAMES or RPM_SPECS (RPM_SPECS takes precedence)
+#                      - space-separated base names of spec files that should
+#                        be built (e.g., sprout). This is needed as some
+#                        specfiles also geenrate debug packages.
 
 # Caller may also set the following:
 # PKG_MINOR_VERSION or RPM_MINOR_VERSION (RPM_MINOR_VERSION takes precedence)
@@ -70,6 +74,7 @@ RPM_COMPONENT ?= $(PKG_COMPONENT)
 RPM_MAJOR_VERSION ?= $(PKG_MAJOR_VERSION)
 RPM_MINOR_VERSION ?= $(PKG_MINOR_VERSION)
 RPM_NAMES ?= $(PKG_NAMES)
+RPM_SPECS ?= $(PKG_NAMES)
 
 RPM_ARCH := $(shell rpmbuild -E %{_arch} 2>/dev/null)
 
@@ -107,7 +112,7 @@ rpm-build:
 	else\
 		echo "- built from revision $$(git rev-parse HEAD)" >>rpm/changelog;\
 	fi
-	for pkg in ${RPM_NAMES} ; do\
+	for pkg in ${RPM_SPECS} ; do\
 		rpmbuild -ba rpm/$${pkg}.spec\
         	         --define "_topdir $(shell pwd)/rpm"\
         	         --define "rootdir $(shell pwd)"\
