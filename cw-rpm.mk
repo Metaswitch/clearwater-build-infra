@@ -139,10 +139,10 @@ rpm-move:
 	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES})                        \
 	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*', ${RPM_NAMES}) ;            \
 	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null ; then                                                                 \
+	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1; then                                                             \
 	      scp rpm/RPMS/noarch/*.rpm ${REPO_SERVER}:${REPO_DIR}/noarch/RPMS/ ;                                             \
 	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null ; then                                                            \
+	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1; then                                                        \
 	      scp rpm/RPMS/${RPM_ARCH}/*.rpm ${REPO_SERVER}:${REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                   \
 	    fi ;                                                                                                              \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${RPM_BUILD_REPO}' ;                                                         \
@@ -176,10 +176,10 @@ rpm-move-hardened:
 	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES})      \
 	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*', ${RPM_NAMES}) ; \
 	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null ; then                                                                 \
+	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1; then                                                             \
 	      scp rpm/RPMS/noarch/*.rpm ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/noarch/RPMS/ ;                           \
 	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null ; then                                                            \
+	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1; then                                                        \
 	      scp rpm/RPMS/${RPM_ARCH}/*.rpm ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/ ;                 \
 	    fi ;                                                                                                              \
 	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${RPM_BUILD_REPO}' ;                                       \
