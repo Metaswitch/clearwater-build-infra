@@ -134,6 +134,11 @@ endif
 # packages have debug packgages). The code below handles this by usng ls to
 # determine what the matches are, and only carrying on if there are some
 # matches.
+#
+# Some existing projects explicitly list their debug packages in DEB_NAMES.
+# Th3e code copes with this. If we are moving to a remote server, we delete the
+# packages after a successful copy as this avoid copying any debug packages
+# twice.
 LOCAL_DEB_GLOB := $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES})
 LOCAL_DEB_DBG_GLOB := $(patsubst %, ../%-dbg_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES})
 
@@ -147,10 +152,10 @@ deb-move:
 	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES})                                                             \
 	                               $(patsubst %, '${REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES});                                                        \
 	    fi ;                                                                                                                                         \
-	    scp ${LOCAL_DEB_GLOB} ${REPO_SERVER}:${REPO_DIR}/binary/ ;                                                                                   \
+	    scp ${LOCAL_DEB_GLOB} ${REPO_SERVER}:${REPO_DIR}/binary/ && rm ${LOCAL_DEB_GLOB} ;                                                           \
 	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
 	    if [ -n "$$debug_packages" ]; then                                                                                                           \
-	      scp $$debug_packages ${REPO_SERVER}:${REPO_DIR}/binary/ ;                                                                                  \
+	      scp $$debug_packages ${REPO_SERVER}:${REPO_DIR}/binary/ && rm $$debug_packages ;                                                           \
 	    fi ;                                                                                                                                         \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                    \
 	  else                                                                                                                                           \
@@ -178,10 +183,10 @@ deb-move-hardened:
 	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES})                                           \
 	                                        $(patsubst %, '${HARDENED_REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES}) ;                                     \
 	    fi ;                                                                                                                                         \
-	    scp $(LOCAL_DEB_GLOB) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;                                                                 \
+	    scp $(LOCAL_DEB_GLOB) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ && rm ${LOCAL_DEB_GLOB};                                          \
 	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
 	    if [ -n "$$debug_packages" ]; then                                                                                                           \
-	      scp $$debug_packages ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;                                                                \
+	      scp $$debug_packages ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ && rm $$debug_packages;                                          \
 	    fi ;                                                                                                                                         \
 	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                  \
 	  else                                                                                                                                           \
