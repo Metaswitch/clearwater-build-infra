@@ -165,8 +165,8 @@ deb-move:
 	      mv $$debug_packages ${REPO_DIR}/binary/ ;                                                                                                  \
 	    fi ;                                                                                                                                         \
 	    cd ${REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                                        \
-	  fi                                                                                                                                             \
-	fi
+	  fi ;                                                                                                                                           \
+	fi ;
 
 .PHONY: deb-move-hardened
 deb-move-hardened:
@@ -176,7 +176,7 @@ deb-move-hardened:
 	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/binary' ;                                                                         \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
 	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/binary/%_*', ${DEB_NAMES})                                           \
-	                                        $(patsubst %, '${HARDENED_REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES})                                       \
+	                                        $(patsubst %, '${HARDENED_REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES}) ;                                     \
 	    fi ;                                                                                                                                         \
 	    scp $(LOCAL_DEB_GLOB) ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/binary/ ;                                                                 \
 	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
@@ -188,7 +188,7 @@ deb-move-hardened:
 	    mkdir -p ${HARDENED_REPO_DIR}/binary ;                                                                                                       \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
 	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/binary/%_*, ${DEB_NAMES})                                                                         \
-	            $(patsubst %, ${HARDENED_REPO_DIR}/binary/%-dbg_*, ${DEB_NAMES})                                                                     \
+	            $(patsubst %, ${HARDENED_REPO_DIR}/binary/%-dbg_*, ${DEB_NAMES}) ;                                                                   \
 	    fi ;                                                                                                                                         \
 	    mv ${LOCAL_DEB_GLOB} ${HARDENED_REPO_DIR}/binary;                                                                                            \
 	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
@@ -196,5 +196,5 @@ deb-move-hardened:
 	      mv $$debug_packages ${HARDENED_REPO_DIR}/binary/ ;                                                                                         \
 	    fi ;                                                                                                                                         \
 	    cd ${HARDENED_REPO_DIR} ; ${DEB_BUILD_REPO}; cd - >/dev/null ;                                                                               \
-	  fi                                                                                                                                             \
-	 fi
+	  fi ;                                                                                                                                           \
+	 fi ;
