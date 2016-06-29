@@ -10,3 +10,25 @@ AutoReqProv:    no
 
 %changelog
 %(cat rpm/changelog)
+
+# Template for debug information sub-package.
+#
+# This is a redefinition of the standard debug_package macro but with an
+# additional Requires line to depend on the parent package at the correct
+# version, and gdb.
+%define cw_debug_package()\
+%ifnarch noarch\
+%global __debug_package 1\
+%package debuginfo\
+Summary: Debug information for package %{name}\
+Group: Development/Debug\
+AutoReqProv: 0\
+Requires: gdb %{name} = %{version}-%{release}\
+%description debuginfo\
+This package provides debug information for package %{name}.\
+Debug information is useful when developing applications that use this\
+package or when debugging this package.\
+%files debuginfo -f debugfiles.list\
+%defattr(-,root,root)\
+%endif\
+%{nil}
