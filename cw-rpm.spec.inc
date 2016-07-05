@@ -1,7 +1,11 @@
+# Default the License and URL if they are not already specified.
+%{!?LICENSE_VALUE: %define LICENSE_VALUE "GPLv3+ with exceptions" }
+%{!?URL_VALUE: %define URL_VALUE http://projectclearwater.org }
+
 Version:        %{RPM_MAJOR_VERSION}
 Release:        %{RPM_MINOR_VERSION}
-License:        "GPLv3+ with exceptions"
-URL:            http://projectclearwater.org
+License:        %{LICENSE_VALUE}
+URL:            %{URL_VALUE}
 Packager:       %{RPM_SIGNER_REAL} <%{RPM_SIGNER}>
 AutoReqProv:    no
 
