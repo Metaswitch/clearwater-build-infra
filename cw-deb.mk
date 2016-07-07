@@ -63,7 +63,8 @@
 #                        packages locally)
 
 # Include common definitions
-include build-infra/cw-pkg.mk
+# We can't just do a straight include, because we need to handle the case where the pwd is not the root of sprout (e.g. when building plugins)
+include $(shell dirname $(lastword $(MAKEFILE_LIST)))/cw-pkg.mk
 
 # Default DEB_* from PKG_*
 DEB_COMPONENT ?= $(PKG_COMPONENT)
