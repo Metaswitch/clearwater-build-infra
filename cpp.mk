@@ -48,7 +48,7 @@ $1_OBJECT_DIR := $${BUILD_DIR}/$1
 # Object files are produced by compiling source files
 $${$1_OBJS} : $${$1_OBJECT_DIR}/%.o : %.cpp
 	@mkdir -p $${$1_OBJECT_DIR}
-	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} -c $$< -o $$@
+	${CXX} ${CXXFLAGS} ${CPPFLAGS} -MMD -MP $${$2_CPPFLAGS} $${$1_CPPFLAGS} $${$$<_CPPFLAGS} -c $$< -o $$@
 
 # clang-tidy files are produced by analyzing source files
 $${$1_CLANGTIDY} : $${$1_OBJECT_DIR}/%.clangtidy : %.cpp
