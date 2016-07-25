@@ -110,6 +110,7 @@ debug_$1 : $${BUILD_DIR}/bin/$1
 # Valgrind arguments for $1
 $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
 
+.PHONY: $${BUILD_DIR}/$1/valgrind_output.xml
 $${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
 	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*" ${EXTRA_TEST_ARGS}
 
