@@ -110,20 +110,18 @@ debug_$1 : $${BUILD_DIR}/bin/$1
 # Valgrind arguments for $1
 $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes --malloc-fill=cc --free-fill=df
 
-$${BUILD_DIR}/$1/valgrind_output.xml : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$$@ $$< --gtest_filter="-*DeathTest*" ${EXTRA_TEST_ARGS}
-
 .PHONY : valgrind_check_$1
-valgrind_check_$1 : $${BUILD_DIR}/$1/valgrind_output.xml
+valgrind_check_$1 : $${BUILD_DIR}/bin/$1
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$${BUILD_DIR}/$1/valgrind_output.xml $$< --gtest_filter="-*DeathTest*" ${EXTRA_TEST_ARGS}
 	@mkdir -p $${BUILD_DIR}/scratch/
-	@xmllint --xpath '//error/kind' $$< 2>&1 | \
+	@xmllint --xpath '//error/kind' $${BUILD_DIR}/$1/valgrind_output.xml 2>&1 | \
 		sed -e 's#<kind>##g' | \
 		sed -e 's#</kind>#\n#g' | \
 		sort > $${BUILD_DIR}/scratch/valgrind.tmp
 	@if grep -q -v "XPath set is empty" $${BUILD_DIR}/scratch/valgrind.tmp ; then \
 		echo "Error: some memory errors have been detected" ; \
 		cat $${BUILD_DIR}/scratch/valgrind.tmp ; \
-		echo "See $$< for further details." ; \
+		echo "See $${BUILD_DIR}/$1/valgrind_output.xml for further details." ; \
 		exit 2 ; \
 	fi
 
