@@ -156,7 +156,7 @@ deb-move:
 	                              $(patsubst %, '${REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES});                                                         \
 	        fi ;                                                                                                                                     \
 	        scp ${LOCAL_DEB_GLOB} $$server:${REPO_DIR}/binary/ ;                                                                                     \
-                debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                              \
+	        debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                              \
 	        if [ -n "$$debug_packages" ]; then                                                                                                       \
 	          scp $$debug_packages $$server:${REPO_DIR}/binary/ ;                                                                                    \
 	        fi ;                                                                                                                                     \
