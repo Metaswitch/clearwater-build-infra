@@ -130,14 +130,14 @@ endif
 # ssh-copy-id can be used to achieve this.
 
 # Shell globs that match the specified packages, and their associated debug
-# packages, respectively. Note that whike all the items in the first glob
+# packages, respectively. Note that while all the items in the first glob
 # should match something, this is not true for the second glob (as not all
 # packages have debug packgages). The code below handles this by usng ls to
 # determine what the matches are, and only carrying on if there are some
 # matches.
 #
 # Some existing projects explicitly list their debug packages in DEB_NAMES.
-# Th3e code copes with this. If we are moving to a remote server, we delete the
+# The code copes with this. If we are moving to a remote server, we delete the
 # packages after a successful copy as this avoid copying any debug packages
 # twice.
 LOCAL_DEB_GLOB := $(patsubst %, ../%_${DEB_MAJOR_VERSION}-${DEB_MINOR_VERSION}_*.deb, ${DEB_NAMES})
@@ -147,18 +147,23 @@ LOCAL_DEB_DBG_GLOB := $(patsubst %, ../%-dbg_${DEB_MAJOR_VERSION}-${DEB_MINOR_VE
 deb-move:
 	@if [ "${REPO_DIR}" != "" ] ; then                                                                                                               \
 	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                                           \
-	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                                                     \
-	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/binary' ;                                                                                           \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
-	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES})                                                             \
-	                               $(patsubst %, '${REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES});                                                        \
-	    fi ;                                                                                                                                         \
-	    scp ${LOCAL_DEB_GLOB} ${REPO_SERVER}:${REPO_DIR}/binary/ && rm ${LOCAL_DEB_GLOB} ;                                                           \
-	    debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                                  \
-	    if [ -n "$$debug_packages" ]; then                                                                                                           \
-	      scp $$debug_packages ${REPO_SERVER}:${REPO_DIR}/binary/ && rm $$debug_packages ;                                                           \
-	    fi ;                                                                                                                                         \
-	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                    \
+	    for server in $$(echo ${REPO_SERVER} | sed "s/,/ /g" ) ; do                                                                                  \
+	      if [ "$$server" != "" ] ; then                                                                                                             \
+	        echo Copying to directory ${REPO_DIR} on repo server $$server... ;                                                                       \
+	        ssh $$server mkdir -p '${REPO_DIR}/binary' ;                                                                                             \
+	        if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                    \
+	          ssh $$server rm -f $(patsubst %, '${REPO_DIR}/binary/%_*', ${DEB_NAMES})                                                               \
+	                              $(patsubst %, '${REPO_DIR}/binary/%-dbg_*', ${DEB_NAMES});                                                         \
+	        fi ;                                                                                                                                     \
+	        scp ${LOCAL_DEB_GLOB} $$server:${REPO_DIR}/binary/ ;                                                                                     \
+	        debug_packages=$$(ls -A ${LOCAL_DEB_DBG_GLOB} 2>/dev/null);                                                                              \
+	        if [ -n "$$debug_packages" ]; then                                                                                                       \
+	          scp $$debug_packages $$server:${REPO_DIR}/binary/ ;                                                                                    \
+	        fi ;                                                                                                                                     \
+	        ssh $$server 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                      \
+	      fi ;                                                                                                                                       \
+	    done ;                                                                                                                                       \
+	    rm ${LOCAL_DEB_GLOB} ;                                                                                                                       \
 	  else                                                                                                                                           \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                                                \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
