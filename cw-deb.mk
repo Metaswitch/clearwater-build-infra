@@ -163,7 +163,7 @@ deb-move:
 	        ssh $$server 'cd ${REPO_DIR} ; ${DEB_BUILD_REPO}' ;                                                                                      \
 	      fi ;                                                                                                                                       \
 	    done ;                                                                                                                                       \
-	    rm ${LOCAL_DEB_GLOB} ;                                                                                                                       \
+	    rm -f ${LOCAL_DEB_GLOB} ;                                                                                                                       \
 	  else                                                                                                                                           \
 	    mkdir -p ${REPO_DIR}/binary ;                                                                                                                \
 	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                                                        \
