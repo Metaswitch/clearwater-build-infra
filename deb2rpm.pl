@@ -108,7 +108,7 @@ EOF
     if (-e "debian/$package.init.d") {
       print $out "copy_to_buildroot debian/$package.init.d /etc/init.d $package\n";
     }
-    for my $service glob("debian/$package*\.service")
+    for my $service (glob("debian/$package*\.service"))
     {
       print $out "copy_to_buildroot $service /etc/systemd/system\n";
     }
