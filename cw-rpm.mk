@@ -76,12 +76,8 @@ RPM_NAMES ?= $(PKG_NAMES)
 
 RPM_ARCH := $(shell rpmbuild -E %{_arch} 2>/dev/null)
 
-# Commands to build an RPM package repo.
-RPM_BUILD_REPO := createrepo .
-ifeq ($(CW_SIGNED), Y)
-RPM_BUILD_REPO := $(RPM_BUILD_REPO) ; \
-                  gpg -abs -u $(CW_SIGNER) repodata/repomd.xml
-endif
+# Include the knowledge on how to move to the repo server
+include build-infra/cw-rpm-move.mk
 
 # Build and move to the repository server (if present).
 .PHONY: rpm-only
@@ -121,82 +117,4 @@ rpm-build:
 	done
 	if [ "$(CW_SIGNED)" = "Y" ] ; then \
 		rpm --addsign --define "_gpg_name ${CW_SIGNER_REAL} <${CW_SIGNER}>" $$(ls rpm/RPMS/noarch/*.rpm 2>/dev/null || true) $$(ls rpm/RPMS/${RPM_ARCH}/*.rpm 2>/dev/null || true) ;\
-	fi
-
-# Move to repository.  If REPO_SERVER is specified, known_hosts on this
-# server must include $REPO_SERVER's server key, and authorized_keys on
-# $REPO_SERVER must include this server's user key.  ssh-copy-id can be
-# used to achieve this.
-.PHONY: rpm-move
-rpm-move:
-	@if [ "${REPO_DIR}" != "" ] ; then                                                                                    \
-	  if [ "${REPO_SERVER}" != "" ] ; then                                                                                \
-	    echo Copying to directory ${REPO_DIR} on repo server ${REPO_SERVER}... ;                                          \
-	    ssh ${REPO_SERVER} mkdir -p '${REPO_DIR}/noarch/RPMS' '${REPO_DIR}/${RPM_ARCH}/RPMS' ;                            \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      ssh ${REPO_SERVER} rm -f $(patsubst %, '${REPO_DIR}/noarch/RPMS/%-*', ${RPM_NAMES})                             \
-	                               $(patsubst %, '${REPO_DIR}/noarch/RPMS/%-debuginfo-*', ${RPM_NAMES})                   \
-	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES})                        \
-	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*', ${RPM_NAMES}) ;            \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1; then                                                             \
-	      scp rpm/RPMS/noarch/*.rpm ${REPO_SERVER}:${REPO_DIR}/noarch/RPMS/ ;                                             \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1; then                                                        \
-	      scp rpm/RPMS/${RPM_ARCH}/*.rpm ${REPO_SERVER}:${REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                   \
-	    fi ;                                                                                                              \
-	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${RPM_BUILD_REPO}' ;                                                         \
-	  else                                                                                                                \
-	    mkdir -p ${REPO_DIR}/noarch/RPMS ${REPO_DIR}/${RPM_ARCH}/RPMS ;                                                   \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      rm -f $(patsubst %, ${REPO_DIR}/noarch/RPMS/%-*, ${RPM_NAMES})                                                  \
-	            $(patsubst %, ${REPO_DIR}/noarch/RPMS/%-debuginfo-*, ${RPM_NAMES})                                        \
-	            $(patsubst %, ${REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${RPM_NAMES})                                             \
-	            $(patsubst %, ${REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*, ${RPM_NAMES}) ;                                 \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1 ; then                                                            \
-	      mv rpm/RPMS/noarch/*.rpm ${REPO_DIR}/noarch/RPMS/ ;                                                             \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1 ; then                                                       \
-	      mv rpm/RPMS/${RPM_ARCH}/*.rpm ${REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                                   \
-	    fi ;                                                                                                              \
-	    cd ${REPO_DIR} ; ${RPM_BUILD_REPO}; cd - >/dev/null ;                                                             \
-	  fi                                                                                                                  \
-	fi
-
-.PHONY: rpm-move-hardened
-rpm-move-hardened:
-	@if [ "${HARDENED_REPO_DIR}" != "" ] ; then                                                                           \
-	  if [ "${HARDENED_REPO_SERVER}" != "" ] ; then                                                                       \
-	    echo Copying to directory ${HARDENED_REPO_DIR} on repo server ${HARDENED_REPO_SERVER}... ;                        \
-	    ssh ${HARDENED_REPO_SERVER} mkdir -p '${HARDENED_REPO_DIR}/noarch/RPMS' '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS' ; \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      ssh ${HARDENED_REPO_SERVER} rm -f $(patsubst %, '${HARDENED_REPO_DIR}/noarch/RPMS/%-*', ${RPM_NAMES})           \
-	                                        $(patsubst %, '${HARDENED_REPO_DIR}/noarch/RPMS/%-debuginfo-*', ${RPM_NAMES}) \
-	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES})      \
-	                                        $(patsubst %, '${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*', ${RPM_NAMES}) ; \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1; then                                                             \
-	      scp rpm/RPMS/noarch/*.rpm ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/noarch/RPMS/ ;                           \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1; then                                                        \
-	      scp rpm/RPMS/${RPM_ARCH}/*.rpm ${HARDENED_REPO_SERVER}:${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/ ;                 \
-	    fi ;                                                                                                              \
-	    ssh ${HARDENED_REPO_SERVER} 'cd ${HARDENED_REPO_DIR} ; ${RPM_BUILD_REPO}' ;                                       \
-	  else                                                                                                                \
-	    mkdir -p ${HARDENED_REPO_DIR}/noarch/RPMS ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS ;                                 \
-	    if [ -n "${REPO_DELETE_OLD}" ] ; then                                                                             \
-	      rm -f $(patsubst %, ${HARDENED_REPO_DIR}/noarch/RPMS/%-*, ${RPM_NAMES})                                         \
-	            $(patsubst %, ${HARDENED_REPO_DIR}/noarch/RPMS/%-debuginfo-*, ${RPM_NAMES})                               \
-	            $(patsubst %, ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-*, ${RPM_NAMES})                                    \
-	            $(patsubst %, ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*, ${RPM_NAMES}) ;                        \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/noarch/*.rpm > /dev/null 2>&1 ; then                                                            \
-	      mv rpm/RPMS/noarch/*.rpm ${HARDENED_REPO_DIR}/noarch/RPMS/ ;                                                    \
-	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1 ; then                                                       \
-	      mv rpm/RPMS/${RPM_ARCH}/*.rpm ${HARDENED_REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                          \
-	    fi ;                                                                                                              \
-	    cd ${HARDENED_REPO_DIR} ; ${RPM_BUILD_REPO}; cd - >/dev/null ;                                                    \
-	  fi                                                                                                                  \
 	fi
