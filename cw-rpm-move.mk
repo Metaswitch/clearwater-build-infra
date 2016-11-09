@@ -91,11 +91,11 @@ rpm-move:
 	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-*', ${RPM_NAMES})                        \
 	                               $(patsubst %, '${REPO_DIR}/${RPM_ARCH}/RPMS/%-debuginfo-*', ${RPM_NAMES}) ;            \
 	    fi ;                                                                                                              \
-	    if ls -A ${RPM_NOARCH_DIR}/*.rpm > /dev/null 2>&1; then                                                             \
-	      scp ${RPM_NOARCH_DIR}/*.rpm ${REPO_SERVER}:${REPO_DIR}/noarch/RPMS/ ;                                             \
+	    if ls -A ${RPM_NOARCH_DIR}/*.rpm > /dev/null 2>&1; then                                                           \
+	      scp ${RPM_NOARCH_DIR}/*.rpm ${REPO_SERVER}:${REPO_DIR}/noarch/RPMS/ ;                                           \
 	    fi ;                                                                                                              \
-	    if ls -A rpm/RPMS/${RPM_ARCH}/*.rpm > /dev/null 2>&1; then                                                        \
-	      scp rpm/RPMS/${RPM_ARCH}/*.rpm ${REPO_SERVER}:${REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                   \
+	    if ls -A ${RPM_ARCH_DIR}/*.rpm > /dev/null 2>&1; then                                                             \
+	      scp ${RPM_ARCH_DIR}/*.rpm ${REPO_SERVER}:${REPO_DIR}/${RPM_ARCH}/RPMS/ ;                                        \
 	    fi ;                                                                                                              \
 	    ssh ${REPO_SERVER} 'cd ${REPO_DIR} ; ${RPM_BUILD_REPO}' ;                                                         \
 	  else                                                                                                                \
