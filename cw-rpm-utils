@@ -62,6 +62,14 @@ function copy_to_buildroot {
   cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2/$3
 }
 
+# Creates a symbolic link in the package build root directory.
+# $1 - link destination
+# $2 - link source
+function link_in_buildroot {
+  mkdir -p $(dirname ${CW_RPM_UTILS_BUILDROOT}/$2)
+  ln -s $1 ${CW_RPM_UTILS_BUILDROOT}/$2
+}
+
 # Runs through a Debian *.install file, copying all files into the package
 # build root directory.
 # The *.install file should be supplied on stdin.
@@ -71,6 +79,17 @@ function install_to_buildroot {
   # Spin through the input line-by-line, calling copy_to_buildroot and passing
   # the first and second halves of the line as separate parameters.
   xargs -r -I {} bash -c 'copy_to_buildroot "$(cut -d\  -f 1 <<< "{}")" "$(cut -d\  -f 2 <<< "{}")"'
+}
+
+# Runs through a Debian *.links file, creating links to the target files in the
+# package build root directory.
+# The *.links file should be supplied on stdin.
+function install_links_in_buildroot {
+  export -f link_in_buildroot
+
+  # Spin through the input line-by-line, calling link_to_buildroot and passing
+  # the first and second halves of the line as separate parameters.
+  xargs -r -I {} bash -c 'link_in_buildroot "$(cut -d\  -f 1 <<< "{}")" "$(cut -d\  -f 2 <<< "{}")"'
 }
 
 # Runs through a Debian *.dirs file, creating all directories within the
@@ -94,10 +113,10 @@ function build_files_list {
   sed -e 's/^\./%attr(755, -, -) /g' |
   sed -e 's/ \(\/etc\/\)/ %config \1/g'
 
-  # Find all non-executable files or empty directories, strip the leading "./",
-  # mark anything below /etc as config, mark anything below /etc/init.d as
-  # executable, and mark the LICENSE file as doc.
-  find . -type f -a ! -executable -o -type d -empty |
+  # Find all non-executable files, empty directories and links, strip the
+  # leading "./", mark anything below /etc as config, mark anything below
+  # /etc/init.d as executable, and mark the LICENSE file as doc.
+  find . -type f -a ! -executable -o -type d -empty -o -type l |
   sed -e 's/^\.//g' |
   sed -e 's/^\(\/etc\/\)/%config \1/g' |
   sed -e 's/ \(\/etc\/init.d\/\)/ %attr(755, -, -) \1/g' |
