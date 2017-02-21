@@ -65,7 +65,7 @@ include build-infra/cw-pkg.mk
 RPM_NAMES ?= $(PKG_NAMES)
 
 RPM_ARCH := $(shell rpmbuild -E %{_arch} 2>/dev/null)
-RPM_NOARCH_DUIR ?= rpm/RPMS/noarch
+RPM_NOARCH_DIR ?= rpm/RPMS/noarch
 RPM_ARCH_DIR ?= rpm/RPMS/${RPM_ARCH}
 
 # Commands to build an RPM package repo.

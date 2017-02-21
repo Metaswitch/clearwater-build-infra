@@ -72,11 +72,9 @@ include build-infra/cw-pkg.mk
 RPM_COMPONENT ?= $(PKG_COMPONENT)
 RPM_MAJOR_VERSION ?= $(PKG_MAJOR_VERSION)
 RPM_MINOR_VERSION ?= $(PKG_MINOR_VERSION)
-RPM_NAMES ?= $(PKG_NAMES)
-
-RPM_ARCH := $(shell rpmbuild -E %{_arch} 2>/dev/null)
 
 # Include the knowledge on how to move to the repo server
+# Also sets RPM_NAMES and RPM_ARCH.
 include build-infra/cw-rpm-move.mk
 
 # Build and move to the repository server (if present).
