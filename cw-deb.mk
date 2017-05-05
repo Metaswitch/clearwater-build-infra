@@ -112,6 +112,9 @@ ifneq ($(wildcard $(LICENSE)),)
 	if [ -e debian/copyright.repo ]; then\
 		cp debian/copyright.repo debian/copyright;\
 		echo "" >> debian/copyright;\
+	        echo "Files: *" >> debian/copyright;\
+	        echo "Copyright: Metaswitch Networks" >> debian/copyright;\
+	        echo "License: GPL-3+ with OpenSSL exception" >> debian/copyright;\
 		cat $(LICENSE) >> debian/copyright;\
 	fi
 else
