@@ -108,17 +108,14 @@ deb-build:
 		echo "  * build from revision $$(git rev-parse HEAD)" >>debian/changelog;\
 	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
-ifneq ($(wildcard $(LICENSE)),)
+ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	if [ -e debian/copyright.repo ]; then\
 		cp debian/copyright.repo debian/copyright;\
 		echo "" >> debian/copyright;\
-	        echo "Files: *" >> debian/copyright;\
-	        echo "Copyright: Metaswitch Networks" >> debian/copyright;\
-	        echo "License: GPL-3+ with OpenSSL exception" >> debian/copyright;\
-		cat $(LICENSE) >> debian/copyright;\
+		cat $(COPYRIGHT_FILE) >> debian/copyright;\
 	fi
 else
-	@printf "*******************************************************************************\n*\n* LICENSE file ($(LICENSE)) is missing\n*\n*******************************************************************************\n"
+	@printf "*******************************************************************************\n*\n* COPYING file ($(COPYRIGHT_FILE)) is missing\n*\n*******************************************************************************\n"
 	@exit 1
 endif
 	debuild --no-lintian -b -uc -us
