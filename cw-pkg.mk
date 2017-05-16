@@ -48,4 +48,4 @@ CW_SIGNER_REAL := Project Clearwater Maintainers
 GIT_BRANCH := $(shell branch=$$(git symbolic-ref -q HEAD); branch=$${branch\#\#refs/heads/}; branch=$${branch:-HEAD}; echo $$branch)
 
 SHELL := bash
-LICENSE := $(ROOT)/LICENSE
+COPYRIGHT_FILE := $(ROOT)/COPYING
