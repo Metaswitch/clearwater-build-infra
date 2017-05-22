@@ -87,11 +87,11 @@ deb-build:
 # Construct a Debian Copyright file.   If there is a COPYRIGHT file provided
 # then use that as the basis of the copyright statement.   Otherwise just state
 # that this is Copyright Metaswitch.
-	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/" >> debian/copyright
+	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/" > debian/copyright
 ifneq ($(wildcard $(COPYRIGHT_FILE)),)
-	cat $(COPYRIGHT_FILE) >> debian/copyright;\
+	cat $(COPYRIGHT_FILE) >> debian/copyright
 else
-	echo "Copyright: Metaswitch Networks" >> debian/copyright;\
+	echo "Copyright: Metaswitch Networks" >> debian/copyright
 endif
 
 	debuild --no-lintian -b -uc -us
