@@ -91,7 +91,9 @@ deb-build:
 ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	cat $(COPYRIGHT_FILE) >> debian/copyright
 else
-	echo "Copyright: Metaswitch Networks" >> debian/copyright
+	echo "Source: http://www.metaswitch.com/" >> debian/copyright
+	echo "Copyright: Metaswitch Networks 2017" >> debian/copyright
+
 endif
 
 	debuild --no-lintian -b -uc -us
