@@ -95,7 +95,7 @@ ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	# fixing the format to be compliant with the relevent debian spec:
 	# continuation lines must start with a space, and blank lines must be a
 	# space followed by a period.
-	sed -e 's/^$/./g' -e '/Copyright:\|Source:/ !s/^/ /g' $(COPYRIGHT_FILE) >> debian/copyright
+	sed -e 's/^$$/./g' -e '/Copyright:\|Source:/ !s/^/ /g' $(COPYRIGHT_FILE) >> debian/copyright
 else
 	echo "Source: http://www.metaswitch.com/" >> debian/copyright
 	echo "Copyright: Metaswitch Networks 2017" >> debian/copyright
