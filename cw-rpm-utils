@@ -25,7 +25,11 @@ export CW_RPM_UTILS_BUILDROOT=$3
 # LICENSE file.
 function setup_buildroot {
   rm -rf ${CW_RPM_UTILS_BUILDROOT}
-  copy_to_buildroot build-infra/LICENSE /usr/share/licenses/$CW_RPM_UTILS_PACKAGE
+  if [ -e ${CW_RPM_UTILS_TOPDIR}/COPYING ]; then
+    copy_to_buildroot COPYING /usr/share/licenses/$CW_RPM_UTILS_PACKAGE LICENSE
+  else
+    echo_to_buildroot "Copyright: Metaswitch Networks 2017" /usr/share/licenses/$CW_RPM_UTILS_PACKAGE LICENSE
+  fi
 }
 
 # Copies a single file to the package build root directory.
@@ -35,6 +39,15 @@ function setup_buildroot {
 function copy_to_buildroot {
   mkdir -p ${CW_RPM_UTILS_BUILDROOT}/$2
   cp -rp ${CW_RPM_UTILS_TOPDIR}/$1 ${CW_RPM_UTILS_BUILDROOT}/$2/$3
+}
+
+# Echoes some text to a file in the package build root directory.
+# $1 - text to echo
+# $2 - target directory
+# $3 - target filename (optional)
+function echo_to_buildroot {
+  mkdir -p ${CW_RPM_UTILS_BUILDROOT}/$2
+  echo $1 > ${CW_RPM_UTILS_BUILDROOT}/$2/$3
 }
 
 # Creates a symbolic link in the package build root directory.
