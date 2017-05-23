@@ -84,16 +84,17 @@ deb-build:
 	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
 
-# Construct a Debian Copyright file.   If there is a COPYRIGHT file provided
-# then use that as the basis of the copyright statement.   Otherwise just state
+# Construct a Debian Copyright file. If there is a COPYRIGHT file provided
+# then use that as the basis of the copyright statement. Otherwise just state
 # that this is Copyright Metaswitch.
-	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/" > debian/copyright
 ifneq ($(wildcard $(COPYRIGHT_FILE)),)
-	cat $(COPYRIGHT_FILE) >> debian/copyright
+	cp $(COPYRIGHT_FILE) debian/copyright
 else
+	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/" > debian/copyright
+	echo "" >> debian/copyright
+	echo "Files: *" >> debian/copyright
 	echo "Source: http://www.metaswitch.com/" >> debian/copyright
 	echo "Copyright: Metaswitch Networks 2017" >> debian/copyright
-
 endif
 
 	debuild --no-lintian -b -uc -us
