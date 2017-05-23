@@ -25,8 +25,8 @@ export CW_RPM_UTILS_BUILDROOT=$3
 # LICENSE file.
 function setup_buildroot {
   rm -rf ${CW_RPM_UTILS_BUILDROOT}
-  if [ -e build-infra/COPYING ]; then
-    copy_to_buildroot build-infra/COPYING /usr/share/licenses/$CW_RPM_UTILS_PACKAGE LICENSE
+  if [ -e ${CW_RPM_UTILS_TOPDIR}/COPYING ]; then
+    copy_to_buildroot COPYING /usr/share/licenses/$CW_RPM_UTILS_PACKAGE LICENSE
   else
     echo_to_buildroot "Copyright: Metaswitch Networks 2017" /usr/share/licenses/$CW_RPM_UTILS_PACKAGE LICENSE
   fi
