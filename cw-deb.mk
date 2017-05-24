@@ -84,9 +84,8 @@ deb-build:
 	fi
 	echo " -- $(CW_SIGNER_REAL) <$(CW_SIGNER)>  $$(date -R)" >>debian/changelog
 
-# Construct a Debian Copyright file. If there is a COPYRIGHT file provided
-# then use that as the basis of the copyright statement. Otherwise just state
-# that this is Copyright Metaswitch.
+# Construct a Debian Copyright file.  Require that there is a COPYING file
+# present defining the copyright terms to use and fail is there is not.
 	echo "Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/" > debian/copyright
 	echo "" >> debian/copyright
 	echo "Files: *" >> debian/copyright
@@ -97,8 +96,8 @@ ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	# space followed by a period.
 	sed -e 's/^$$/./g' -e '/Copyright:\|Source:/ !s/^/ /g' $(COPYRIGHT_FILE) >> debian/copyright
 else
-	echo "Source: http://www.metaswitch.com/" >> debian/copyright
-	echo "Copyright: Metaswitch Networks 2017" >> debian/copyright
+	echo "You must provide a COPYING file in the root of your repository in order to build packages."
+	exit 1
 endif
 
 	debuild --no-lintian -b -uc -us
