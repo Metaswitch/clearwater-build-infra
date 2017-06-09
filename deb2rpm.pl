@@ -118,6 +118,9 @@ EOF
     if (-e "debian/$package.logrotate") {
       print $out "copy_to_buildroot debian/$package.logrotate /etc/logrotate.d $package\n";
     }
+    if (-e "debian/$package.rsyslog") {
+      print $out "copy_to_buildroot debian/$package.rsyslog /etc/rsyslog.d $package.conf\n";
+    }
     if (-e "debian/$package.preinst") {
       print " - Check debian/$package.preinst!\n";
       print $out "echo Check debian/$package.preinst and remove this message! >&2 ; exit 1\n";
