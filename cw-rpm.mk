@@ -66,22 +66,20 @@ ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	# We have a COPYING file that contains the copyright information.
 	# Extract the short name of the license and the URL for use in the RPM
 	# copyright information.
-	while read line
-	do
-		if [[ $line == Copyright:* ]]
-		then
+	for line in $(cat $(COPYRIGHT_FILE)); do \
+		if [[ $line == Copyright:* ]]; then \
 			# The bash syntax here extracts everything after the "Copyright: "
 			# marker from $line.
 			RPM_LICENSE=${line%%Copyright: *}
-		elif [[ $line == Source:* ]]
+		elif [[ $line == Source:* ]]; then \
 		    # The bash syntax here extract everything after the "Source: "
 			# marker from $line.
 			RPM_URL=${line%%Source: *}
 		fi
-	done < $COPYRIGHT_FILE
+	done
 else
-    echo "You must provide a COPYING file in the root of your repository in order to build packages."
-	exit 1
+  echo "You must provide a COPYING file in the root of your repository in order to build packages."
+  exit 1
 endif
 	# If this is built from a git@github.com: URL then output Git instructions for accessing the build tree
 	echo "* $$(date -u +"%a %b %d %Y") $(CW_SIGNER_REAL) <$(CW_SIGNER)>" >rpm/changelog;\
