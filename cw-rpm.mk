@@ -59,6 +59,27 @@ rpm-only: rpm-build rpm-move rpm-move-hardened
 # Build the .rpm files in rpm/RPMS.
 .PHONY: rpm-build
 rpm-build:
+ifneq ($(wildcard $(COPYRIGHT_FILE)),)
+	# We have a COPYING file that contains the copyright information.
+	# Extract the short name of the license and the URL for use in the RPM
+	# copyright information.
+	while read line
+	do
+		if [[ $line == Copyright:* ]]
+		then
+			# The bash syntax here extracts everything after the "Copyright: "
+			# marker from $line.
+			RPM_LICENSE=${line%%Copyright: *}
+		elif [[ $line == Source:* ]]
+		    # The bash syntax here extract everything after the "Source: "
+			# marker from $line.
+			RPM_URL=${line%%Source: *}
+		fi
+	done < $COPYRIGHT_FILE
+else
+    echo "You must provide a COPYING file in the root of your repository in order to build packages."
+	exit 1
+endif
 	# Clear out old RPMs
 	rm -rf rpm/SRPMS/*
 	rm -rf rpm/RPMS/*
@@ -86,7 +107,9 @@ rpm-build:
         	         --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
         	         --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}"\
         	         --define "RPM_SIGNER ${CW_SIGNER}"\
-        	         --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" || exit 1;\
+					 --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}"
+					 --define "RPM_LICENSE ${RPM_LICENSE}"
+					 --define "RPM_URL ${RPM_URL}" || exit 1;\
 	done
 	if [ "$(CW_SIGNED)" = "Y" ] ; then \
 		rpm --addsign --define "_gpg_name ${CW_SIGNER_REAL} <${CW_SIGNER}>" $$(ls rpm/RPMS/noarch/*.rpm 2>/dev/null || true) $$(ls rpm/RPMS/${RPM_ARCH}/*.rpm 2>/dev/null || true) ;\
