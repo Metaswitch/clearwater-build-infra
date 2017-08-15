@@ -62,6 +62,16 @@ rpm-build:
 	# Clear out old RPMs
 	rm -rf rpm/SRPMS/*
 	rm -rf rpm/RPMS/*
+ifneq ($(wildcard $(COPYRIGHT_FILE)),)
+	# We have a COPYING file that contains the copyright information.
+	# Extract the short name of the license and the URL for use in the RPM
+	# copyright information.
+	$(eval RPM_LICENSE:=$(shell grep "Copyright:" $(COPYRIGHT_FILE) | sed -e 's/Copyright: //'))
+	$(eval RPM_URL:=$(shell grep "Source:" $(COPYRIGHT_FILE) | sed -e 's/Source: //'))
+else
+  echo "You must provide a COPYING file in the root of your repository in order to build packages."
+  exit 1
+endif
 	# If this is built from a git@github.com: URL then output Git instructions for accessing the build tree
 	echo "* $$(date -u +"%a %b %d %Y") $(CW_SIGNER_REAL) <$(CW_SIGNER)>" >rpm/changelog;\
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
@@ -86,7 +96,9 @@ rpm-build:
         	         --define "RPM_MAJOR_VERSION ${RPM_MAJOR_VERSION}"\
         	         --define "RPM_MINOR_VERSION ${RPM_MINOR_VERSION}"\
         	         --define "RPM_SIGNER ${CW_SIGNER}"\
-        	         --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" || exit 1;\
+					 --define "RPM_SIGNER_REAL ${CW_SIGNER_REAL}" \
+					 --define "RPM_LICENSE $(RPM_LICENSE)" \
+					 --define "RPM_URL $(RPM_URL)" || exit 1;\
 	done
 	if [ "$(CW_SIGNED)" = "Y" ] ; then \
 		rpm --addsign --define "_gpg_name ${CW_SIGNER_REAL} <${CW_SIGNER}>" $$(ls rpm/RPMS/noarch/*.rpm 2>/dev/null || true) $$(ls rpm/RPMS/${RPM_ARCH}/*.rpm 2>/dev/null || true) ;\
