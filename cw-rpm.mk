@@ -59,6 +59,9 @@ rpm-only: rpm-build rpm-move rpm-move-hardened
 # Build the .rpm files in rpm/RPMS.
 .PHONY: rpm-build
 rpm-build:
+	# Clear out old RPMs
+	rm -rf rpm/SRPMS/*
+	rm -rf rpm/RPMS/*
 ifneq ($(wildcard $(COPYRIGHT_FILE)),)
 	# We have a COPYING file that contains the copyright information.
 	# Extract the short name of the license and the URL for use in the RPM
@@ -80,9 +83,6 @@ else
     echo "You must provide a COPYING file in the root of your repository in order to build packages."
 	exit 1
 endif
-	# Clear out old RPMs
-	rm -rf rpm/SRPMS/*
-	rm -rf rpm/RPMS/*
 	# If this is built from a git@github.com: URL then output Git instructions for accessing the build tree
 	echo "* $$(date -u +"%a %b %d %Y") $(CW_SIGNER_REAL) <$(CW_SIGNER)>" >rpm/changelog;\
 	if [[ "$$(git config --get remote.origin.url)" =~ ^git@github.com: ]]; then\
