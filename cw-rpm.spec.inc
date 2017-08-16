@@ -1,7 +1,3 @@
-# Default the License and URL if they are not already specified.
-%{!?RPM_LICENSE: %define RPM_LICENSE "GPLv3+ with exceptions" }
-%{!?RPM_URL: %define RPM_URL http://projectclearwater.org }
-
 Version:        %{RPM_MAJOR_VERSION}
 Release:        %{RPM_MINOR_VERSION}
 License:        %{RPM_LICENSE}
