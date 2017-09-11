@@ -15,3 +15,14 @@ analysis: env
 	# Files in -x are ignored and only high severity level (-lll) are shown.
 	$(ENV_DIR)/bin/easy_install bandit
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
+
+# Common definitions
+PYTHON := ${ENV_DIR}/bin/python
+PIP := ${ENV_DIR}/bin/pip
+FLAKE8 := ${ENV_DIR}/bin/flake8
+
+INSTALLER := ${PIP} install --compile \
+                            --no-index \
+                            --upgrade \
+                            --pre \
+                            --force-reinstall
