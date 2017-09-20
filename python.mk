@@ -10,16 +10,20 @@
 # Metaswitch Networks in a separate written agreement.
 
 .PHONY: analysis
-analysis: env
-	# Scanning python code recursively for security issues using Bandit. 
-	# Files in -x are ignored and only high severity level (-lll) are shown.
-	$(ENV_DIR)/bin/easy_install bandit
-	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
 
 # Common definitions
 PYTHON := ${ENV_DIR}/bin/python
 PIP := ${ENV_DIR}/bin/pip
 FLAKE8 := ${ENV_DIR}/bin/flake8
+BANDIT := ${ENV_DIR}/bin/bandit
+
+${BANDIT}: ${ENV_DIR} ${PIP}
+	${PIP} install bandit
+
+analysis: ${BANDIT}
+	# Scanning python code recursively for security issues using Bandit.
+	# Files in -x are ignored and only high severity level (-lll) are shown.
+	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
 
 INSTALLER := ${PIP} install --compile \
                             --no-index \
