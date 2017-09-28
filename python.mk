@@ -31,6 +31,12 @@ ${PYTHON} ${ENV_DIR} ${PIP}:
 	${PIP} install --upgrade pip==9.0.1
 	${PIP} install wheel==0.30.0
 
+${ENV_DIR}/.wheels-built:
+	touch $@
+
+${ENV_DIR}/.wheels-installed:
+	touch $@
+
 # Common rules to build a python component
 #
 # @param $1 - Target name
@@ -49,11 +55,8 @@ define python_component
 # The wheelhouse can be overridden if desired
 $1_WHEELHOUSE ?= $1_wheelhouse
 
-.PHONY: build-wheels
-build-wheels: ${ENV_DIR}/.$1-build-wheels
-
-.PHONY: install-wheels
-install-wheels: ${ENV_DIR}/.$1-install-wheels
+${ENV_DIR}/.wheels-built: ${ENV_DIR}/.$1-build-wheels
+${ENV_DIR}/.wheels-installed: ${ENV_DIR}/.$1-install-wheels
 
 # Builds the wheels for this target
 ${ENV_DIR}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
@@ -79,15 +82,13 @@ endef
 ${FLAKE8}: ${ENV_DIR} ${PIP}
 	${PIP} install flake8
 
+.PHONY: verify
 verify: ${FLAKE8}
 	${FLAKE8} --select=E10,E11,E9,F "${FLAKE8_INCLUDE_DIR}" --exclude "${FLAKE8_EXCLUDE_DIR}"
 
+.PHONY: style
 style: ${FLAKE8}
 	${FLAKE8} --select=E,W,C,N --max-line-length=100 "${FLAKE8_INCLUDE_DIR}"
-
-# TODO the "--show-pep8" option has been removed from flake8
-explain-style: ${FLAKE8}
-	${FLAKE8} --select=E,W,C,N --show-pep8 --first --max-line-length=100 "${FLAKE8_INCLUDE_DIR}"
 
 ${BANDIT}: ${ENV_DIR} ${PIP}
 	${PIP} install bandit
