@@ -99,3 +99,19 @@ analysis: ${BANDIT}
 	# Files in -x are ignored and only high severity level (-lll) are shown.
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
 
+.PHONY: clean
+clean: envclean pyclean
+
+.PHONY: envclean
+envclean:
+	rm -rf bin .eggs .wheelhouse *_wheelhouse parts .installed.cfg bootstrap.py .downloads .buildout_downloads *.egg *.egg-info
+	rm -rf distribute-*.tar.gz
+	rm -rf $(ENV_DIR)
+
+.PHONY: pyclean
+pyclean:
+	find ${SRC_DIR} -name \*.pyc -exec rm -f {} \;
+	rm -rf ${SRC_DIR}/*.egg-info dist
+	rm -rf build build_*
+	rm -f .coverage
+	rm -rf htmlcov/
