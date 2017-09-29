@@ -80,13 +80,23 @@ ${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.$1-build-wheels $${$1_REQUIREMENTS}
 
 endef
 
+# Common coverage target.
+# To use this, the following must be defined:
+#     * COVERAGE_SETUP_PY: list of the setup.py files that are run under coverage
+#
+# The following are optional, but will be used if defined:
+#     * COVERAGE_PYTHON_PATH: the PYTHONPATH used for the coverage run
+#     * COMPILER_FLAGS: compiler flags to be used
+#     * COVERAGE_SRC_DIR: the source directory for the coverage run
+#     * COVERAGE_EXCL: excluded files
+#
 .PHONY: coverage
 coverage: ${COVERAGE} ${ENV_DIR}/.wheels-installed
 	rm -rf htmlcov/
 	${COVERAGE} erase
 	# For each setup.py file in COVERAGE_SETUP_PY, run under coverage
 	$(foreach setup, ${COVERAGE_SETUP_PY}, \
-		PYTHONPATH=${COVERAGE_PYTHON_PATH} ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
+		$(if ${COVERAGE_PYTHON_PATH},PYTHONPATH=${COVERAGE_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} xml
