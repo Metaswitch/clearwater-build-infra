@@ -112,7 +112,7 @@ $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$${BUILD_DIR}/$1/valgrind_output.xml $$< --gtest_filter="-*DeathTest*" ${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$${BUILD_DIR}/$1/valgrind_output.xml $$< $(if ${VALGRIND_EXCL},--gtest_filter="-*DeathTest*:${VALGRIND_EXCL}",--gtest_filter="-*DeathTest*") ${EXTRA_TEST_ARGS}
 	@mkdir -p $${BUILD_DIR}/scratch/
 	@xmllint --xpath '//error/kind' $${BUILD_DIR}/$1/valgrind_output.xml 2>&1 | \
 		sed -e 's#<kind>##g' | \
