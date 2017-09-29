@@ -11,6 +11,8 @@
 # For test targets, there are a few extra customization flags:
 #
 #   <target>_VALGRIND_ARGS - Extra, product specific arguments for Valgrind
+#   <target>_VALGRIND_EXCL - (optional) A Gtest filter to match on tests to be
+#                            excluded from the valgrind check
 #
 # This Makefile snippet defines a few variables that may be useful when adding
 # extra pre-requisites to targets:
@@ -112,7 +114,7 @@ $1_VALGRIND_ARGS += --gen-suppressions=all --leak-check=full --track-origins=yes
 
 .PHONY : valgrind_check_$1
 valgrind_check_$1 : $${BUILD_DIR}/bin/$1
-	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$${BUILD_DIR}/$1/valgrind_output.xml $$< $(if ${VALGRIND_EXCL},--gtest_filter="-*DeathTest*:${VALGRIND_EXCL}",--gtest_filter="-*DeathTest*") ${EXTRA_TEST_ARGS}
+	LD_LIBRARY_PATH=$${$1_LD_LIBRARY_PATH} valgrind $${$1_VALGRIND_ARGS} --xml=yes --xml-file=$${BUILD_DIR}/$1/valgrind_output.xml $$< $$(if $${$1_VALGRIND_EXCL},--gtest_filter="-*DeathTest*:$${$1_VALGRIND_EXCL}",--gtest_filter="-*DeathTest*") ${EXTRA_TEST_ARGS}
 	@mkdir -p $${BUILD_DIR}/scratch/
 	@xmllint --xpath '//error/kind' $${BUILD_DIR}/$1/valgrind_output.xml 2>&1 | \
 		sed -e 's#<kind>##g' | \
