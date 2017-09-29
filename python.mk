@@ -86,7 +86,7 @@ coverage: ${COVERAGE} ${ENV_DIR}/.wheels-installed
 	${COVERAGE} erase
 	# For each setup.py file in COVERAGE_SETUP_PY, run under coverage
 	$(foreach setup, ${COVERAGE_SETUP_PY}, \
-		PYTHONPATH=${COVERAGE_PYTHON_PATH} ${COMPILER_FLAGS} ${COVERAGE} run --omit "${COVERAGE_EXCL}" -a ${setup} test;)
+		PYTHONPATH=${COVERAGE_PYTHON_PATH} ${COMPILER_FLAGS} ${COVERAGE} run --source ${COVERAGE_SRC_DIR} --omit "${COVERAGE_EXCL}" -a ${setup} test;)
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} xml
