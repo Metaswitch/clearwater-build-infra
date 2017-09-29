@@ -135,8 +135,8 @@ envclean:
 
 .PHONY: pyclean
 pyclean:
-	find ${SRC_DIR} -name \*.pyc -exec rm -f {} \;
-	rm -rf ${SRC_DIR}/*.egg-info dist
+	$(if ${CLEAN_SRC_DIR},find ${CLEAN_SRC_DIR} -name \*.pyc -exec rm -f {} \;,)
+	$(if ${CLEAN_SRC_DIR},rm -rf ${CLEAN_SRC_DIR}/*.egg-info dist,)
 	rm -rf build build_*
 	rm -f .coverage
 	rm -rf htmlcov/
