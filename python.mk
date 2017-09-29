@@ -14,6 +14,7 @@
 PYTHON := ${ENV_DIR}/bin/python
 PIP := ${ENV_DIR}/bin/pip
 FLAKE8 := ${ENV_DIR}/bin/flake8
+COVERAGE := ${ENV_DIR}/bin/coverage
 BANDIT := ${ENV_DIR}/bin/bandit
 
 INSTALLER := ${PIP} install --compile \
@@ -76,8 +77,22 @@ ${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.$1-build-wheels $${$1_REQUIREMENTS}
 
 	touch $$@
 
+
 endef
 
+.PHONY: coverage
+coverage: ${COVERAGE} ${ENV_DIR}/.wheels-installed
+	rm -rf htmlcov/
+	${COVERAGE} erase
+	# For each setup.py file in COVERAGE_SETUP_PY, run under coverage
+	$(foreach setup, ${COVERAGE_SETUP_PY}, \
+		PYTHONPATH=${COVERAGE_PYTHON_PATH} ${COMPILER_FLAGS} ${COVERAGE} run --omit "${_COVERAGE_EXCL}" -a ${setup} test;)
+	${COVERAGE} combine
+	${COVERAGE} report -m --fail-under 100
+	${COVERAGE} xml
+
+${COVERAGE}: ${PIP}
+	${PIP} install coverage==4.1
 
 ${FLAKE8}: ${ENV_DIR} ${PIP}
 	${PIP} install flake8
