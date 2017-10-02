@@ -66,7 +66,7 @@ ${ENV_DIR}/.wheels-installed: ${ENV_DIR}/.$1-install-wheels
 ${ENV_DIR}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
-		$${$1_FLAGS} ${PYTHON} $${setup} build -b build_$$(subst .py,,$${setup}) bdist_wheel -d $${$1_WHEELHOUSE};)
+		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
 
 	touch $$@
 
@@ -76,7 +76,7 @@ ${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.$1-build-wheels $${$1_REQUIREMENTS}
 	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
 
 	# Install the required dependencies in the local environment
-	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $${$1_WHEELS}  $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
+	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
 
 	touch $$@
 
