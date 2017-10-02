@@ -118,6 +118,7 @@ ${ENV_DIR}/.test-requirements: ${ENV_DIR}/.wheels-installed ${TEST_REQUIREMENTS}
 	# Install the test requirements
 	$(foreach reqs, ${TEST_REQUIREMENTS}, \
 		${PIP} install -r ${reqs};)
+	touch $@
 
 ${COVERAGE}: ${PIP}
 	${PIP} install coverage==4.1
