@@ -71,38 +71,53 @@ ${ENV_DIR}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
 	touch $$@
 
 # Downloads required dependencies and installs them in the local environment
-${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.$1-build-wheels $${$1_REQUIREMENTS}
+${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.wheels-built $${$1_REQUIREMENTS}
 	# Download the required dependencies
 	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
 
 	# Install the required dependencies in the local environment
-	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
+	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
 
 	touch $$@
 
 
 endef
 
-# Common coverage target.
-# To use this, the following must be defined:
-#     * COVERAGE_SETUP_PY: list of the setup.py files that are run under coverage
+# Common test and coverage targets.
+# To use these, the following must be defined:
+#     * TEST_SETUP_PY: list of the setup.py files that are run under coverage
 #
 # The following are optional, but will be used if defined:
-#     * COVERAGE_PYTHON_PATH: the PYTHONPATH used for the coverage run
+#     * TEST_PYTHON_PATH: the PYTHONPATH used for the tests
 #     * COMPILER_FLAGS: compiler flags to be used
 #     * COVERAGE_SRC_DIR: the source directory for the coverage run
 #     * COVERAGE_EXCL: excluded files
 #
 .PHONY: coverage
-coverage: ${COVERAGE} ${ENV_DIR}/.wheels-installed
+coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 	rm -rf htmlcov/
 	${COVERAGE} erase
-	# For each setup.py file in COVERAGE_SETUP_PY, run under coverage
-	$(foreach setup, ${COVERAGE_SETUP_PY}, \
-		$(if ${COVERAGE_PYTHON_PATH},PYTHONPATH=${COVERAGE_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
+	# For each setup.py file in TEST_SETUP_PY, run under coverage
+	$(foreach setup, ${TEST_SETUP_PY}, \
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} xml
+
+.PHONY: test
+test: ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
+	# Run test for each setup.py file in TEST_SETUP_PY
+	$(foreach setup, ${TEST_SETUP_PY}, \
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${PYTHON} ${setup} test -v;)
+
+# Common test requirements.
+# To use this, the following should be set:
+#     * TEST_REQUIREMENTS: a list of the requirements files needed to install
+#                          the test dependencies
+${ENV_DIR}/.test-requirements: ${ENV_DIR}/.wheels-installed ${TEST_REQUIREMENTS}
+	# Install the test requirements
+	$(foreach reqs, ${TEST_REQUIREMENTS}, \
+		${PIP} install -r ${reqs};)
 
 ${COVERAGE}: ${PIP}
 	${PIP} install coverage==4.1
@@ -126,6 +141,9 @@ analysis: ${BANDIT}
 	# Scanning python code recursively for security issues using Bandit.
 	# Files in -x are ignored and only high severity level (-lll) are shown.
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
+
+.PHONY: env
+env: ${ENV_DIR}/.wheels-installed
 
 .PHONY: clean
 clean: envclean pyclean
