@@ -17,8 +17,8 @@ FLAKE8 := ${ENV_DIR}/bin/flake8
 COVERAGE := ${ENV_DIR}/bin/coverage
 BANDIT := ${ENV_DIR}/bin/bandit
 
-# If not set, default COVERAGE_SETUP_PY
-COVERAGE_SETUP_PY ?= setup.py
+# If not set, default TEST_SETUP_PY
+TEST_SETUP_PY ?= setup.py
 
 INSTALLER := ${PIP} install --compile \
                             --no-index \
