@@ -35,6 +35,9 @@ ${PYTHON} ${ENV_DIR} ${PIP}:
 	${PIP} install --upgrade pip==9.0.1
 	${PIP} install wheel==0.30.0
 
+${ENV_DIR}/.wheels-cleaned:
+	touch $@
+
 ${ENV_DIR}/.wheels-built:
 	touch $@
 
@@ -59,11 +62,18 @@ define python_component
 # The wheelhouse can be overridden if desired
 $1_WHEELHOUSE ?= $1_wheelhouse
 
+${ENV_DIR}/.wheels-cleaned: ${ENV_DIR}/.$1-clean-wheels
 ${ENV_DIR}/.wheels-built: ${ENV_DIR}/.$1-build-wheels
 ${ENV_DIR}/.wheels-installed: ${ENV_DIR}/.$1-install-wheels
 
+# Ensures that the wheelhouses are cleaned when source files change
+${ENV_DIR}/.$1-clean-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
+	# Remove the wheelhouse
+	rm -rf $${$1_WHEELHOUSE}
+	touch $$@
+
 # Builds the wheels for this target
-${ENV_DIR}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
+${ENV_DIR}/.$1-build-wheels: ${ENV_DIR}/.wheels-cleaned
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
 		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
