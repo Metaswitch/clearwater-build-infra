@@ -112,7 +112,7 @@ coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
-	${COVERAGE} xml
+	${COVERAGE} html
 
 .PHONY: test
 test: ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
