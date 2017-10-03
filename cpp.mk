@@ -228,7 +228,8 @@ $(foreach target,${TEST_TARGETS},$(eval $(call test_target,${target})))
 all : ${TARGETS}
 
 # Complete test suite, runs all possible test flavours)
-full_test : valgrind_check coverage_check
+# Includes coverage_raw so we get the formatted coverage output
+full_test : valgrind_check coverage_raw coverage_check
 
 clean :
 	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
