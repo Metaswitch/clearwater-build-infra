@@ -35,6 +35,8 @@ ${PYTHON} ${ENV_DIR} ${PIP}:
 	${PIP} install --upgrade pip==9.0.1
 	${PIP} install wheel==0.30.0
 
+# Dummy targets onto which the targets defined in python_component below are
+# added as dependencies.
 ${ENV_DIR}/.wheels-cleaned:
 	touch $@
 
