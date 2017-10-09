@@ -163,14 +163,14 @@ clean: envclean pyclean
 
 .PHONY: envclean
 envclean:
-	rm -rf bin .eggs .wheelhouse *wheelhouse parts .installed.cfg bootstrap.py .downloads .buildout_downloads *.egg *.egg-info
-	rm -rf distribute-*.tar.gz
+	rm -rf ${ROOT}/bin ${ROOT}/.eggs ${ROOT}/.wheelhouse ${ROOT}/*wheelhouse ${ROOT}/parts ${ROOT}/.installed.cfg ${ROOT}/bootstrap.py ${ROOT}/.downloads ${ROOT}/.buildout_downloads ${ROOT}/*.egg ${ROOT}/*.egg-info
+	rm -rf ${ROOT}/distribute-*.tar.gz
 	rm -rf $(ENV_DIR)
 
 .PHONY: pyclean
 pyclean:
 	$(if ${CLEAN_SRC_DIR},find ${CLEAN_SRC_DIR} -name \*.pyc -exec rm -f {} \;,)
 	$(if ${CLEAN_SRC_DIR},rm -rf ${CLEAN_SRC_DIR}/*.egg-info dist,)
-	rm -rf build build_*
-	rm -f .coverage
-	rm -rf htmlcov/
+	rm -rf ${ROOT}/build ${ROOT}/build_*
+	rm -f ${ROOT}/.coverage
+	rm -rf ${ROOT}/htmlcov/
