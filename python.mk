@@ -26,10 +26,12 @@ INSTALLER := ${PIP} install --compile \
                             --pre \
                             --force-reinstall
 
+SETUPTOOLS_VERSION ?= 24
+
 ${PYTHON} ${ENV_DIR} ${PIP}:
 	# Set up a fresh virtual environment and install pip
 	virtualenv --setuptools --python=$(PYTHON_BIN) $(ENV_DIR)
-	$(ENV_DIR)/bin/easy_install "setuptools==24"
+	$(ENV_DIR)/bin/easy_install "setuptools==${SETUPTOOLS_VERSION}"
 
 	# Ensure we have an up to date version of pip with wheel support
 	${PIP} install --upgrade pip==9.0.1
