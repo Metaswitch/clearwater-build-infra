@@ -80,7 +80,7 @@ ${ENV_DIR}/.$1-clean-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
 ${ENV_DIR}/.$1-build-wheels: ${ENV_DIR}/.wheels-cleaned
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
-		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
+		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
 
 	touch $$@
 
