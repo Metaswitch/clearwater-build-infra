@@ -26,10 +26,12 @@ INSTALLER := ${PIP} install --compile \
                             --pre \
                             --force-reinstall
 
+SETUPTOOLS_VERSION ?= 24
+
 ${PYTHON} ${ENV_DIR} ${PIP}:
 	# Set up a fresh virtual environment and install pip
 	virtualenv --setuptools --python=$(PYTHON_BIN) $(ENV_DIR)
-	$(ENV_DIR)/bin/easy_install "setuptools==24"
+	$(ENV_DIR)/bin/easy_install "setuptools==${SETUPTOOLS_VERSION}"
 
 	# Ensure we have an up to date version of pip with wheel support
 	${PIP} install --upgrade pip==9.0.1
@@ -78,7 +80,7 @@ ${ENV_DIR}/.$1-clean-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
 ${ENV_DIR}/.$1-build-wheels: ${ENV_DIR}/.wheels-cleaned
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
-		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
+		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
 
 	touch $$@
 
