@@ -80,7 +80,7 @@ ${ENV_DIR}/.$1-clean-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
 ${ENV_DIR}/.$1-build-wheels: ${ENV_DIR}/.wheels-cleaned
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
-		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE};)
+		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
 
 	touch $$@
 
@@ -113,7 +113,7 @@ coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 	${COVERAGE} erase
 	# For each setup.py file in TEST_SETUP_PY, run under coverage
 	$(foreach setup, ${TEST_SETUP_PY}, \
-		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test;)
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} html
@@ -122,7 +122,7 @@ coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 test: ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 	# Run test for each setup.py file in TEST_SETUP_PY
 	$(foreach setup, ${TEST_SETUP_PY}, \
-		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${PYTHON} ${setup} test -v;)
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${PYTHON} ${setup} test -v &&) true
 
 # Common test requirements.
 # To use this, the following should be set:
@@ -131,7 +131,7 @@ test: ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
 ${ENV_DIR}/.test-requirements: ${ENV_DIR}/.wheels-installed ${TEST_REQUIREMENTS}
 	# Install the test requirements
 	$(foreach reqs, ${TEST_REQUIREMENTS}, \
-		${PIP} install -r ${reqs};)
+		${PIP} install -r ${reqs} &&) true
 	touch $@
 
 ${COVERAGE}: ${PIP}
