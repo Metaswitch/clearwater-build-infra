@@ -166,7 +166,6 @@ clean: envclean pyclean
 .PHONY: envclean
 envclean:
 	rm -rf ${ROOT}/bin ${ROOT}/.eggs ${ROOT}/.wheelhouse ${ROOT}/*wheelhouse ${ROOT}/parts ${ROOT}/.installed.cfg ${ROOT}/bootstrap.py ${ROOT}/.downloads ${ROOT}/.buildout_downloads ${ROOT}/*.egg ${ROOT}/*.egg-info
-	rm -rf ${ROOT}/distribute-*.tar.gz
 	rm -rf $(ENV_DIR)
 
 .PHONY: pyclean
