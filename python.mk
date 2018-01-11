@@ -44,9 +44,6 @@ ${ENV_DIR}/.env:
 
 # Dummy targets onto which the targets defined in python_component below are
 # added as dependencies.
-${ENV_DIR}/.download-external-wheels:
-	touch $@
-
 ${ENV_DIR}/.install-external-wheels:
 	touch $@
 
@@ -55,7 +52,6 @@ ${ENV_DIR}/.build-wheels:
 
 # This target builds all required wheelhouses (and is therefore normally a dependency of `make deb`)
 .PHONY: wheelhouses
-wheelhouses: ${ENV_DIR}/.download-external-wheels
 
 # Common rules for a python component that includes tests
 # @param $1 - Target name
@@ -101,16 +97,16 @@ $(call python_test_component,$1)
 # The wheelhouse can be overridden if desired
 $1_WHEELHOUSE ?= $1_wheelhouse
 
-${ENV_DIR}/.download-external-wheels: $${$1_WHEELHOUSE}/.$1-download-wheels
+${ENV_DIR}/.download-external-wheels: $${$1_WHEELHOUSE}/.download-wheels
 ${ENV_DIR}/.install-external-wheels: ${ENV_DIR}/.$1-install-wheels
-${ENV_DIR}/.build-wheels: $${$1_WHEELHOUSE}/.$1-build-wheels
+${ENV_DIR}/.build-wheels: $${$1_WHEELHOUSE}/.build-wheels
 
 # Whenever the requirements change, we must delete our venv as we may have the
 # wrong requirements installed
 ${ENV_DIR}/.env: $${$1_REQUIREMENTS}
 
 # To create the wheelhouse, we need to download external wheels and build our own wheels
-$${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.$1-download-wheels $${$1_WHEELHOUSE}/.$1-build-wheels
+$${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
 	touch $$@
 
 # Add this wheelhouse to the wheelhouses target
@@ -122,22 +118,25 @@ $${$1_WHEELHOUSE}/.clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
 	mkdir -p $${$1_WHEELHOUSE}
 	touch $$@
 
-$${$1_WHEELHOUSE}/.$1-download-wheels: $${$1_WHEELHOUSE}/.clean-wheels
+$${$1_WHEELHOUSE}/.download-wheels: $${$1_WHEELHOUSE}/.clean-wheels
   # Download the required dependencies for this component
 	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
 	touch $$@
 
 # Builds the wheels for this component
-$${$1_WHEELHOUSE}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.clean-wheels
+$${$1_WHEELHOUSE}/.build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.clean-wheels
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
 		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
 	touch $$@
 
-${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.$1-download-wheels
+${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels
   # Install all wheels in the wheelhouse into the virtual env for this component
 	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
 	touch $$@
+
+# To run the tests, we need to install the dependencies
+${ENV_DIR}/.$1-test-requirements: ${ENV_DIR}/.$1-install-wheels
 
 endef
 
@@ -153,7 +152,7 @@ endef
 #     * COVERAGE_EXCL: excluded files
 #
 .PHONY: coverage
-coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${ENV_DIR}/.install-external-wheels ${COVERAGE_SETUP_PY}
+coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements
 	rm -rf htmlcov/
 	${COVERAGE} erase
 	# For each setup.py file in TEST_SETUP_PY, run under coverage
