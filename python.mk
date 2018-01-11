@@ -103,7 +103,7 @@ $1_WHEELHOUSE ?= $1_wheelhouse
 
 ${ENV_DIR}/.download-external-wheels: $${$1_WHEELHOUSE}/.$1-download-wheels
 ${ENV_DIR}/.install-external-wheels: ${ENV_DIR}/.$1-install-wheels
-${ENV_DIR}/.build-wheels: $$${$1_WHEELHOUSE}/.$1-build-wheels
+${ENV_DIR}/.build-wheels: $${$1_WHEELHOUSE}/.$1-build-wheels
 
 # Whenever the requirements change, we must delete our venv as we may have the
 # wrong requirements installed
@@ -116,19 +116,19 @@ $${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.$1-download-wheels $$
 # Add this wheelhouse to the wheelhouses target
 wheelhouses: $${$1_WHEELHOUSE}/.wheelhouse_complete
 
-$${$1_WHEELHOUSE}/.$1-clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
+$${$1_WHEELHOUSE}/.clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
 	# Whenever the requirements change, clear out the wheelhouse
 	rm -rf $${$1_WHEELHOUSE}/*
 	mkdir -p $${$1_WHEELHOUSE}
 	touch $$@
 
-$${$1_WHEELHOUSE}/.$1-download-wheels: $${$1_WHEELHOUSE}/.$1-clean-wheels
+$${$1_WHEELHOUSE}/.$1-download-wheels: $${$1_WHEELHOUSE}/.clean-wheels
   # Download the required dependencies for this component
 	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
 	touch $$@
 
 # Builds the wheels for this component
-$${$1_WHEELHOUSE}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON} $${$1_WHEELHOUSE}/.$1-clean-wheels
+$${$1_WHEELHOUSE}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.clean-wheels
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
 		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
