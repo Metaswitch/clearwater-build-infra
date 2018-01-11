@@ -28,7 +28,10 @@ INSTALLER := ${PIP} install --compile \
 
 SETUPTOOLS_VERSION ?= 24
 
-${PYTHON} ${ENV_DIR} ${PIP}:
+${ENV_DIR}/.env:
+	# Delete any existing venv
+	rm -rf ${ENV_DIR}
+
 	# Set up a fresh virtual environment and install pip
 	virtualenv --setuptools --python=$(PYTHON_BIN) $(ENV_DIR)
 	$(ENV_DIR)/bin/easy_install "setuptools==${SETUPTOOLS_VERSION}"
@@ -37,16 +40,45 @@ ${PYTHON} ${ENV_DIR} ${PIP}:
 	${PIP} install --upgrade pip==9.0.1
 	${PIP} install wheel==0.30.0
 
+	touch $@
+
 # Dummy targets onto which the targets defined in python_component below are
 # added as dependencies.
-${ENV_DIR}/.wheels-cleaned:
+${ENV_DIR}/.download-external-wheels:
 	touch $@
 
-${ENV_DIR}/.wheels-built:
+${ENV_DIR}/.install-external-wheels:
 	touch $@
 
-${ENV_DIR}/.wheels-installed:
+${ENV_DIR}/.build-wheels:
 	touch $@
+
+# This target builds all required wheelhouses (and is therefore normally a dependency of `make deb`)
+.PHONY: wheelhouses
+wheelhouses: ${ENV_DIR}/.download-external-wheels
+
+# Common rules for a python component that includes tests
+# @param $1 - Target name
+#
+# Each target must supply:
+#   - <target>_TEST_REQUIREMENTS - A list of the requirements files that the target uses
+#   - <target>_TEST_SETUP        - The setup.py file used to run the tests
+#
+define python_test_component
+
+${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.env
+	# Install the test requirements for this component
+	$$(foreach reqs, $${$1_TEST_REQUIREMENTS}, ${PIP} install -r $${reqs} &&) true
+	touch $$@
+
+.PHONY: $1_test
+$1_test: ${ENV_DIR}/.$1-test-requirements
+	$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${PYTHON} $${$1_TEST_SETUP} test -v
+
+${ENV_DIR}/.test-requirements: ${ENV_DIR}/.$1-test-requirements
+
+test: $1_test
+endef
 
 # Common rules to build a python component
 #
@@ -63,39 +95,52 @@ ${ENV_DIR}/.wheels-installed:
 # <target>_WHEELHOUSE
 define python_component
 
+# Create common tests targets for this component
+$(call python_test_component,$1)
+
 # The wheelhouse can be overridden if desired
 $1_WHEELHOUSE ?= $1_wheelhouse
 
-${ENV_DIR}/.wheels-cleaned: ${ENV_DIR}/.$1-clean-wheels
-${ENV_DIR}/.wheels-built: ${ENV_DIR}/.$1-build-wheels
-${ENV_DIR}/.wheels-installed: ${ENV_DIR}/.$1-install-wheels
+${ENV_DIR}/.download-external-wheels: $${$1_WHEELHOUSE}/.$1-download-wheels
+${ENV_DIR}/.install-external-wheels: ${ENV_DIR}/.$1-install-wheels
+${ENV_DIR}/.build-wheels: $$${$1_WHEELHOUSE}/.$1-build-wheels
 
-# Ensures that the wheelhouses are cleaned when source files change
-${ENV_DIR}/.$1-clean-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON}
-	# Remove the wheelhouse
-	rm -rf $${$1_WHEELHOUSE}
+# Whenever the requirements change, we must delete our venv as we may have the
+# wrong requirements installed
+${ENV_DIR}/.env: $${$1_REQUIREMENTS}
+
+# To create the wheelhouse, we need to download external wheels and build our own wheels
+$${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.$1-download-wheels $${$1_WHEELHOUSE}/.$1-build-wheels
 	touch $$@
 
-# Builds the wheels for this target
-${ENV_DIR}/.$1-build-wheels: ${ENV_DIR}/.wheels-cleaned
+# Add this wheelhouse to the wheelhouses target
+wheelhouses: $${$1_WHEELHOUSE}/.wheelhouse_complete
+
+$${$1_WHEELHOUSE}/.$1-clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
+	# Whenever the requirements change, clear out the wheelhouse
+	rm -rf $${$1_WHEELHOUSE}/*
+	mkdir -p $${$1_WHEELHOUSE}
+	touch $$@
+
+$${$1_WHEELHOUSE}/.$1-download-wheels: $${$1_WHEELHOUSE}/.$1-clean-wheels
+  # Download the required dependencies for this component
+	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
+	touch $$@
+
+# Builds the wheels for this component
+$${$1_WHEELHOUSE}/.$1-build-wheels: $${$1_SETUP} $${$1_SOURCES} ${PYTHON} $${$1_WHEELHOUSE}/.$1-clean-wheels
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
 		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
-
 	touch $$@
 
-# Downloads required dependencies and installs them in the local environment
-${ENV_DIR}/.$1-install-wheels: ${ENV_DIR}/.wheels-built $${$1_REQUIREMENTS}
-	# Download the required dependencies
-	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
-
-	# Install the required dependencies in the local environment
+${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.$1-download-wheels
+  # Install all wheels in the wheelhouse into the virtual env for this component
 	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
-
 	touch $$@
-
 
 endef
+
 
 # Common test and coverage targets.
 # To use these, the following must be defined:
@@ -108,36 +153,25 @@ endef
 #     * COVERAGE_EXCL: excluded files
 #
 .PHONY: coverage
-coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
+coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements ${ENV_DIR}/.install-external-wheels ${COVERAGE_SETUP_PY}
 	rm -rf htmlcov/
 	${COVERAGE} erase
 	# For each setup.py file in TEST_SETUP_PY, run under coverage
-	$(foreach setup, ${TEST_SETUP_PY}, \
+	$(foreach setup, ${COVERAGE_SETUP_PY}, \
 		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} html
 
-.PHONY: test
-test: ${ENV_DIR}/.test-requirements ${TEST_SETUP_PY}
-	# Run test for each setup.py file in TEST_SETUP_PY
-	$(foreach setup, ${TEST_SETUP_PY}, \
-		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${PYTHON} ${setup} test -v &&) true
-
-# Common test requirements.
-# To use this, the following should be set:
-#     * TEST_REQUIREMENTS: a list of the requirements files needed to install
-#                          the test dependencies
-${ENV_DIR}/.test-requirements: ${ENV_DIR}/.wheels-installed ${TEST_REQUIREMENTS}
-	# Install the test requirements
-	$(foreach reqs, ${TEST_REQUIREMENTS}, \
-		${PIP} install -r ${reqs} &&) true
+${ENV_DIR}/.test-requirements:
 	touch $@
 
-${COVERAGE}: ${PIP}
+.PHONY: test
+
+${COVERAGE}: ${ENV_DIR}/.env
 	${PIP} install coverage==4.1
 
-${FLAKE8}: ${ENV_DIR} ${PIP}
+${FLAKE8}: ${ENV_DIR}/.env
 	${PIP} install flake8
 
 .PHONY: verify
@@ -148,7 +182,7 @@ verify: ${FLAKE8}
 style: ${FLAKE8}
 	${FLAKE8} --select=E,W,C,N --max-line-length=100 "${FLAKE8_INCLUDE_DIR}"
 
-${BANDIT}: ${ENV_DIR} ${PIP}
+${BANDIT}: ${ENV_DIR}/.env
 	${PIP} install bandit
 
 .PHONY: analysis
@@ -158,7 +192,7 @@ analysis: ${BANDIT}
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
 
 .PHONY: env
-env: ${ENV_DIR}/.wheels-installed
+env: ${ENV_DIR}/.env
 
 .PHONY: clean
 clean: envclean pyclean
