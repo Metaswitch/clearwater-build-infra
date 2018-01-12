@@ -147,13 +147,18 @@ $${$1_WHEELHOUSE}/.build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.
 		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
 	touch $$@
 
-${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
+${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels
   # Install all wheels in the wheelhouse into the virtual env for this component
-	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS} $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
+	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
+	touch $$@
+
+${ENV_DIR}/.$1-install-built-wheels: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
+  # Install all wheels in the wheelhouse into the virtual env for this component
+	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS}
 	touch $$@
 
 # To run the tests, we need to install the dependencies
-${ENV_DIR}/.$1-test-requirements: ${ENV_DIR}/.$1-install-wheels
+${ENV_DIR}/.$1-test-requirements: ${ENV_DIR}/.$1-install-wheels ${ENV_DIR}/.$1-install-built-wheels
 
 endef
 
