@@ -42,16 +42,37 @@ ${ENV_DIR}/.env:
 
 	touch $@
 
-# Dummy targets onto which the targets defined in python_component below are
-# added as dependencies.
-${ENV_DIR}/.install-external-wheels:
-	touch $@
-
-${ENV_DIR}/.build-wheels:
-	touch $@
-
-# This target builds all required wheelhouses (and is therefore normally a dependency of `make deb`)
+# This target builds all required wheelhouses and is therefore expected to be a
+# dependency of `make deb`
 .PHONY: wheelhouses
+
+# A dummy test target, to which dependencies are added for each test component
+.PHONY: test
+
+# Common coverage target. Because coverage is run over all components at once,
+# COVERAGE_SETUP_PY must be specified as a list of setup.py files that are run
+# under coverage.
+#
+# Optional parameters:
+#  - COVERAGE_SRC_DIR is the directory in which we run coverage.
+#  - COVERAGE_EXCL are files to be excluded from coverage
+#  - TEST_PYTHON_PATH is the python path to use
+#  - COMPILER_FLAGS are any additional flags to  be used.
+.PHONY: coverage
+coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements
+	rm -rf htmlcov/
+	${COVERAGE} erase
+	# For each setup.py file in TEST_SETUP_PY, run under coverage
+	$(foreach setup, ${COVERAGE_SETUP_PY}, \
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
+	${COVERAGE} combine
+	${COVERAGE} report -m --fail-under 100
+	${COVERAGE} html
+
+# Dummy test requirements target to which we add the requirements for each component,
+# so that coverage can depend on this target.
+${ENV_DIR}/.test-requirements:
+	touch $@
 
 # Common rules for a python component that includes tests
 # @param $1 - Target name
@@ -59,7 +80,6 @@ ${ENV_DIR}/.build-wheels:
 # Each target must supply:
 #   - <target>_TEST_REQUIREMENTS - A list of the requirements files that the target uses
 #   - <target>_TEST_SETUP        - The setup.py file used to run the tests
-#
 define python_test_component
 
 ${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.env
@@ -76,7 +96,7 @@ ${ENV_DIR}/.test-requirements: ${ENV_DIR}/.$1-test-requirements
 test: $1_test
 endef
 
-# Common rules to build a python component
+# Common rules to build a python component. Includes adding a test target.
 #
 # @param $1 - Target name
 #
@@ -84,8 +104,9 @@ endef
 #   - <target>_SETUP        - A list of the setup.py files that the target depends on
 #   - <target>_REQUIREMENTS - A list of the requirements files that the target uses
 #   - <target>_SOURCES      - A list of the python source files that go into the wheel
-#   - <target>_WHEELS       - A list of the wheels that are produced
+#   - <target>_WHEELS       - (Optional) A list of built wheels that should be installed in the environent.
 #   - <target>_FLAGS        - (Optional) Extra flags to be passed to python commands
+#   - <target>_BUILD_DIRS   - (Optional) If specified, this component uses a the build directory {ROOT}/build_<target>
 #
 # The location of the wheelhouse can be overridden if desired, by specifying
 # <target>_WHEELHOUSE
@@ -96,10 +117,6 @@ $(call python_test_component,$1)
 
 # The wheelhouse can be overridden if desired
 $1_WHEELHOUSE ?= $1_wheelhouse
-
-${ENV_DIR}/.download-external-wheels: $${$1_WHEELHOUSE}/.download-wheels
-${ENV_DIR}/.install-external-wheels: ${ENV_DIR}/.$1-install-wheels
-${ENV_DIR}/.build-wheels: $${$1_WHEELHOUSE}/.build-wheels
 
 # Whenever the requirements change, we must delete our venv as we may have the
 # wrong requirements installed
@@ -139,33 +156,6 @@ ${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOU
 ${ENV_DIR}/.$1-test-requirements: ${ENV_DIR}/.$1-install-wheels
 
 endef
-
-
-# Common test and coverage targets.
-# To use these, the following must be defined:
-#     * TEST_SETUP_PY: list of the setup.py files that are run under coverage
-#
-# The following are optional, but will be used if defined:
-#     * TEST_PYTHON_PATH: the PYTHONPATH used for the tests
-#     * COMPILER_FLAGS: compiler flags to be used
-#     * COVERAGE_SRC_DIR: the source directory for the coverage run
-#     * COVERAGE_EXCL: excluded files
-#
-.PHONY: coverage
-coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements
-	rm -rf htmlcov/
-	${COVERAGE} erase
-	# For each setup.py file in TEST_SETUP_PY, run under coverage
-	$(foreach setup, ${COVERAGE_SETUP_PY}, \
-		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
-	${COVERAGE} combine
-	${COVERAGE} report -m --fail-under 100
-	${COVERAGE} html
-
-${ENV_DIR}/.test-requirements:
-	touch $@
-
-.PHONY: test
 
 ${COVERAGE}: ${ENV_DIR}/.env
 	${PIP} install coverage==4.1
