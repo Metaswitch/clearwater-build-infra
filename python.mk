@@ -136,7 +136,7 @@ $${$1_WHEELHOUSE}/.clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
 	touch $$@
 
 $${$1_WHEELHOUSE}/.download-wheels: $${$1_WHEELHOUSE}/.clean-wheels
-  # Download the required dependencies for this component
+	# Download the required dependencies for this component
 	$${$1_FLAGS} ${PIP} wheel -w $${$1_WHEELHOUSE} $$(foreach req,$${$1_REQUIREMENTS},-r $${req}) --find-links $${$1_WHEELHOUSE}
 	touch $$@
 
@@ -148,12 +148,12 @@ $${$1_WHEELHOUSE}/.build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.
 	touch $$@
 
 ${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels
-  # Install all wheels in the wheelhouse into the virtual env for this component
+	# Install all wheels in the wheelhouse into the virtual env for this component
 	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
 	touch $$@
 
 ${ENV_DIR}/.$1-install-built-wheels: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
-  # Install all wheels in the wheelhouse into the virtual env for this component
+	# Install all wheels in the wheelhouse into the virtual env for this component
 	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $${$1_WHEELS}
 	touch $$@
 
