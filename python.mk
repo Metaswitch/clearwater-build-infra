@@ -27,8 +27,10 @@ INSTALLER := ${PIP} install --compile \
                             --force-reinstall
 
 SETUPTOOLS_VERSION ?= 24
+PIP_VERSION ?= 9.0.1
+WHEEL_VERSION ?= 0.30.0
 
-${ENV_DIR}/.env:
+${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}:
 	# Delete any existing venv
 	rm -rf ${ENV_DIR}
 
@@ -37,8 +39,8 @@ ${ENV_DIR}/.env:
 	$(ENV_DIR)/bin/easy_install "setuptools==${SETUPTOOLS_VERSION}"
 
 	# Ensure we have an up to date version of pip with wheel support
-	${PIP} install --upgrade pip==9.0.1
-	${PIP} install wheel==0.30.0
+	${PIP} install --upgrade pip==${PIP_VERSION}
+	${PIP} install wheel==${WHEEL_VERSION}
 
 	touch $@
 
@@ -100,9 +102,9 @@ endif
 
 # Whenever the test requirements change, we must delete our venv as we may have
 # the wrong requirements installed
-${ENV_DIR}/.env: $${$1_TEST_REQUIREMENTS}
+${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}: $${$1_TEST_REQUIREMENTS}
 
-${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.env
+${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 	# Install the test requirements for this component
 	$$(foreach reqs, $${$1_TEST_REQUIREMENTS}, ${PIP} install -r $${reqs} &&) true
 	touch $$@
@@ -139,7 +141,7 @@ $1_WHEELHOUSE ?= $1_wheelhouse
 
 # Whenever the requirements change, we must delete our venv as we may have the
 # wrong requirements installed
-${ENV_DIR}/.env: $${$1_REQUIREMENTS}
+${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}: $${$1_REQUIREMENTS}
 
 # To create the wheelhouse, we need to download external wheels and build our own wheels
 $${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
@@ -148,7 +150,7 @@ $${$1_WHEELHOUSE}/.wheelhouse_complete: $${$1_WHEELHOUSE}/.download-wheels $${$1
 # Add this wheelhouse to the wheelhouses target
 wheelhouses: $${$1_WHEELHOUSE}/.wheelhouse_complete
 
-$${$1_WHEELHOUSE}/.clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.env
+$${$1_WHEELHOUSE}/.clean-wheels: $${$1_REQUIREMENTS} ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 	# Whenever the requirements change, clear out the wheelhouse
 	rm -rf $${$1_WHEELHOUSE}/*
 	mkdir -p $${$1_WHEELHOUSE}
@@ -185,10 +187,10 @@ ${ENV_DIR}/.$1-test-requirements: ${ENV_DIR}/.$1-install-wheels ${ENV_DIR}/.$1-i
 
 endef
 
-${COVERAGE}: ${ENV_DIR}/.env
+${COVERAGE}: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 	${PIP} install coverage==4.1
 
-${FLAKE8}: ${ENV_DIR}/.env
+${FLAKE8}: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 	${PIP} install flake8
 
 .PHONY: verify
@@ -202,7 +204,7 @@ style: ${FLAKE8}
 .PHONY: full_test
 full_test: test coverage verify analysis
 
-${BANDIT}: ${ENV_DIR}/.env
+${BANDIT}: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 	${PIP} install bandit
 
 .PHONY: analysis
@@ -212,7 +214,7 @@ analysis: ${BANDIT}
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
 
 .PHONY: env
-env: ${ENV_DIR}/.env
+env: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 
 .PHONY: clean
 clean: envclean pyclean
