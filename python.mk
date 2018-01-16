@@ -49,9 +49,10 @@ ${ENV_DIR}/.env:
 # A dummy test target, to which dependencies are added for each test component
 .PHONY: test
 
-# Common coverage target. Because coverage is run over all components at once,
-# COVERAGE_SETUP_PY must be specified as a list of setup.py files that are run
-# under coverage.
+# Common coverage target.
+#
+# COVERAGE_SETUP_PY is a list of setup.py files to be run under coverage, and is
+# built up by adding the <target>_TEST_SETUP for each python_test_component.
 #
 # Optional parameters:
 #  - COVERAGE_SRC_DIR is the directory in which we run coverage.
@@ -77,12 +78,25 @@ ${ENV_DIR}/.test-requirements:
 	touch $@
 
 # Common rules for a python component that includes tests
-# @param $1 - Target name
+# @param $1 - (Required) Target name
+# @param $2 - (Optional) If set to "EXCLUDE_TEST", the component will not be
+#             added to the `test` target or the coverage target
+#
+# e.g. you might have an fv_test target, which you don't want to be added to
+# coverage or the `test` target, which you'd do with:
+#     $(eval $(call python_test_component,fv,EXCLUDE_TEST))
 #
 # Each target must supply:
 #   - <target>_TEST_REQUIREMENTS - A list of the requirements files that the target uses
 #   - <target>_TEST_SETUP        - The setup.py file used to run the tests
 define python_test_component
+
+# If required, add this test setup file to the list of setup files to be run
+# under coverage, and add this _test target to the common `test` target
+ifneq ($2, EXCLUDE_TEST)
+COVERAGE_SETUP_PY += $${$1_TEST_SETUP}
+test: $1_test
+endif
 
 ${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.env
 	# Install the test requirements for this component
@@ -95,7 +109,6 @@ $1_test: ${ENV_DIR}/.$1-test-requirements
 
 ${ENV_DIR}/.test-requirements: ${ENV_DIR}/.$1-test-requirements
 
-test: $1_test
 endef
 
 # Common rules to build a python component. Includes adding a test target.
@@ -181,6 +194,9 @@ verify: ${FLAKE8}
 .PHONY: style
 style: ${FLAKE8}
 	${FLAKE8} --select=E,W,C,N --max-line-length=100 "${FLAKE8_INCLUDE_DIR}"
+
+.PHONY: full_test
+full_test: test coverage verify analysis
 
 ${BANDIT}: ${ENV_DIR}/.env
 	${PIP} install bandit
