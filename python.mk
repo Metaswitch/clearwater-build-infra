@@ -64,7 +64,9 @@ coverage: ${COVERAGE} ${ENV_DIR}/.test-requirements
 	${COVERAGE} erase
 	# For each setup.py file in TEST_SETUP_PY, run under coverage
 	$(foreach setup, ${COVERAGE_SETUP_PY}, \
-		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} ${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) $(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
+		$(if ${TEST_PYTHON_PATH},PYTHONPATH=${TEST_PYTHON_PATH},) ${COMPILER_FLAGS} \
+			${COVERAGE} run $(if ${COVERAGE_SRC_DIR},--source ${COVERAGE_SRC_DIR},) \
+			$(if ${COVERAGE_EXCL},--omit "${COVERAGE_EXCL}",) -a ${setup} test &&) true
 	${COVERAGE} combine
 	${COVERAGE} report -m --fail-under 100
 	${COVERAGE} html
@@ -144,12 +146,16 @@ $${$1_WHEELHOUSE}/.download-wheels: $${$1_WHEELHOUSE}/.clean-wheels
 $${$1_WHEELHOUSE}/.build-wheels: $${$1_SETUP} $${$1_SOURCES} $${$1_WHEELHOUSE}/.clean-wheels
 	# For each setup.py file, generate the wheel
 	$$(foreach setup, $${$1_SETUP}, \
-		$${$1_FLAGS} ${PYTHON} $${setup} $$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) bdist_wheel -d $${$1_WHEELHOUSE} &&) true
+		$${$1_FLAGS} ${PYTHON} $${setup} \
+			$$(if $${$1_BUILD_DIRS},build -b ${ROOT}/build_$$(subst .py,,$${setup})) \
+			bdist_wheel -d $${$1_WHEELHOUSE} &&) true
 	touch $$@
 
 ${ENV_DIR}/.$1-install-wheels: $${$1_WHEELHOUSE}/.download-wheels
 	# Install all wheels in the wheelhouse into the virtual env for this component
-	${INSTALLER} --find-links=$${$1_WHEELHOUSE} $$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) $$(foreach req,$${$1_REQUIREMENTS},-r $${req})
+	${INSTALLER} --find-links=$${$1_WHEELHOUSE} \
+		$$(if $${$1_EXTRA_LINKS},--find-links=$${$1_EXTRA_LINKS},) \
+		$$(foreach req,$${$1_REQUIREMENTS},-r $${req})
 	touch $$@
 
 ${ENV_DIR}/.$1-install-built-wheels: $${$1_WHEELHOUSE}/.download-wheels $${$1_WHEELHOUSE}/.build-wheels
