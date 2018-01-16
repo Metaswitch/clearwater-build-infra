@@ -98,6 +98,10 @@ COVERAGE_SETUP_PY += $${$1_TEST_SETUP}
 test: $1_test
 endif
 
+# Whenever the test requirements change, we must delete our venv as we may have
+# the wrong requirements installed
+${ENV_DIR}/.env: $${$1_TEST_REQUIREMENTS}
+
 ${ENV_DIR}/.$1-test-requirements: $${$1_TEST_REQUIREMENTS} ${ENV_DIR}/.env
 	# Install the test requirements for this component
 	$$(foreach reqs, $${$1_TEST_REQUIREMENTS}, ${PIP} install -r $${reqs} &&) true
