@@ -210,8 +210,8 @@ ${BANDIT}: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 .PHONY: analysis
 analysis: ${BANDIT}
 	# Scanning python code recursively for security issues using Bandit.
-	# Files in -x are ignored and only high severity level (-lll) are shown.
-	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -lll
+	# Files in -x are ignored. Only issues of medium severity and above (-ll) are shown.
+	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -ll
 
 .PHONY: env
 env: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
