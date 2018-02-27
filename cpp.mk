@@ -30,6 +30,7 @@ GTEST_DIR ?= ${GMOCK_DIR}/gtest
 GCOVR_DIR ?= ${ROOT}/modules/gcovr
 CPP_COMMON_DIR ?= ${ROOT}/modules/cpp-common
 BUILD_DIR ?= ${ROOT}/build
+SERVICE_TEST_DIR ?= ${ROOT}/service_tests
 
 # Common rules to build any target
 #
@@ -77,6 +78,16 @@ CLEAN_DIRS += $${$1_OBJECT_DIR}
 .PHONY: clangtidy_$1
 clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
+
+ifeq ($2,release)
+.PHONY: service_test_$1
+service_test_$1: $${BUILD_DIR}/bin/$1
+	if [ -d $${SERVICE_TEST_DIR} ]; then $${SERVICE_TEST_DIR}/service_test_main; else echo "No service tests found"; fi
+
+# Shortcut alias
+.PHONY: service_test
+service_test : service_test_$1
+endif
 
 CLEANS += $${$1_CLANGTIDY}
 
@@ -229,7 +240,7 @@ all : ${TARGETS}
 
 # Complete test suite, runs all possible test flavours)
 # Includes coverage_raw so we get the formatted coverage output
-full_test : valgrind_check coverage_raw coverage_check
+full_test : valgrind_check service_test coverage_raw coverage_check
 
 clean :
 	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
