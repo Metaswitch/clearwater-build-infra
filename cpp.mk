@@ -79,9 +79,15 @@ CLEAN_DIRS += $${$1_OBJECT_DIR}
 clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
 
+ifeq ($2,release)
 .PHONY: service_test_$1
 service_test_$1: $${BUILD_DIR}/bin/$1
 	if [ -d $${SERVICE_TEST_DIR} ]; then $${SERVICE_TEST_DIR}/service_test_main; else echo "No service tests found"; fi
+
+# Shortcut alias
+.PHONY: service_test
+service_test : service_test_$1
+endif
 
 CLEANS += $${$1_CLANGTIDY}
 
@@ -180,7 +186,6 @@ cppcheck_$1 :
 	cppcheck --enable=all --quiet -i ut -I ../include -I ../modules/cpp-common/include .
 
 test : run_$1
-service_test : service_test_$1
 valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
 coverage_check : coverage_check_$1
