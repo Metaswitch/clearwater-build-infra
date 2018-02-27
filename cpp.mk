@@ -79,6 +79,7 @@ CLEAN_DIRS += $${$1_OBJECT_DIR}
 clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
 
+service_test:
 ifeq ($2,release)
 .PHONY: service_test_$1
 service_test_$1: $${BUILD_DIR}/bin/$1
@@ -86,7 +87,7 @@ service_test_$1: $${BUILD_DIR}/bin/$1
 
 # Shortcut alias
 .PHONY: service_test
-service_test : service_test_$1
+service_test: service_test_$1
 endif
 
 CLEANS += $${$1_CLANGTIDY}
