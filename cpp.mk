@@ -83,7 +83,14 @@ service_test:
 ifeq ($2,release)
 .PHONY: service_test_$1
 service_test_$1: $${BUILD_DIR}/bin/$1
-	if [ -d $${SERVICE_TEST_DIR} ]; then cd $${SERVICE_TEST_DIR} && ./service_test_main; else echo "No service tests found"; fi
+	if [ -d $${SERVICE_TEST_DIR} ]; then \
+		cd $${SERVICE_TEST_DIR} && \
+		bash -xe ./copy_files_to_docker_context.sh && \
+		docker build -t $(shell whoami)-$$@ . && \
+		docker run -t $(shell whoami)-$$@; \
+		else \
+		echo "No service tests found"; \
+		fi
 
 # Shortcut alias
 .PHONY: service_test
