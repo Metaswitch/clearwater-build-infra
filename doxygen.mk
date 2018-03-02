@@ -23,7 +23,7 @@ doxygen:
 	sed -i -e "s/^EXTRACT_ANON_NSPACES .*/EXTRACT_ANON_NSPACES = YES/g" ${BUILD_DIR}/Doxyfile
 	sed -i -e "s/^BUILTIN_STL_SUPPORT .*/BUILTIN_STL_SUPPORT = YES/g" ${BUILD_DIR}/Doxyfile
 	
-	sed -i -e "s/^LATEX_OUTPUT .*/LATEX_OUTPUT = NO/g" ${BUILD_DIR}/Doxyfile
+	sed -i -e "s/^GENERATE_LATEX .*/GENERATE_LATEX = NO/g" ${BUILD_DIR}/Doxyfile
 
 	doxygen ${BUILD_DIR}/Doxyfile
 
