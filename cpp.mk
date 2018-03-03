@@ -95,7 +95,7 @@ service_test_$1: $${BUILD_DIR}/bin/$1
 		cd $${SERVICE_TEST_DIR} && \
 		bash -xe ./copy_files_to_docker_context.sh && \
 		docker build -t $(shell whoami)-$$@ . && \
-		docker run -t $(shell whoami)-$$@; \
+		docker run -v $$(abspath $${SERVICE_TEST_DIR}/log):/log -t $(shell whoami)-$$@; \
 		else \
 		echo "No service tests found"; \
 		fi
