@@ -83,22 +83,20 @@ clangtidy_$1: $${$1_CLANGTIDY}
 # enforces this. To run service tests, repositories must provide:
 # - a service_tests/ directory at the top level
 # - a Dockerfile in that directory which will run the tests
-# - a copy_files_to_docker_context.sh script in that directory, which is
-#   responsible for copying any necessary files (e.g. the binary and libraries
-#   under test) into the service_test/ directory structure - the Dockerfile
-#   cannot see anything above this directory.
+# - a service_test_copy_files_NAME Makefile target which is responsible for
+#   copying any necessary files (e.g. the binary and libraries under test) into
+#   the service_test/ directory structure - the Dockerfile cannot see anything
+#   above this directory.
+
+.PHONY: service_test_copy_files_$1
+service_test_copy_files_$1:
+
 service_test:
+
 ifeq ($2,release)
 .PHONY: service_test_$1
-service_test_$1: $${BUILD_DIR}/bin/$1
-	if [ -d $${SERVICE_TEST_DIR} ]; then \
-		cd $${SERVICE_TEST_DIR} && \
-		bash -xe ./copy_files_to_docker_context.sh && \
-		docker build -t $(shell whoami)-$$@ . && \
-		docker run -t $(shell whoami)-$$@; \
-		else \
-		echo "No service tests found"; \
-		fi
+service_test_$1: service_test_copy_files_$1
+	python3 $${ROOT}/build-infra/run_docker_test.py $${SERVICE_TEST_DIR}
 
 # Shortcut alias
 .PHONY: service_test
