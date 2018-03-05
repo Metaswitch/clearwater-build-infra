@@ -21,7 +21,7 @@
 #   CLEAN_DIRS          - All directories listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
-.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck analysis
+.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck analysis analysis_version
 
 # Makefiles can override these if needed
 ROOT ?= ..
@@ -79,16 +79,6 @@ clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
 
 CLEANS += $${$1_CLANGTIDY}
-
-.PHONY : cppcheck_$1
-cppcheck_$1 :
-	cppcheck --enable=all --quiet -i ut -I ../include -I ../modules/cpp-common/include .
-
-.PHONY : analysis_$1
-analysis_$1 :
-	echo "lll"
-	make clean
-	scan-build -enable-checker core -enable-checker cplusplus -enable-checker deadcode -enable-checker security -enable-checker unix make
 
 endef
 
@@ -180,6 +170,10 @@ CLEANS += $${BUILD_DIR}/scratch/coverage_$1.tmp $${BUILD_DIR}/scratch/coverage_$
 coverage_raw_$1 : $${BUILD_DIR}/$1/.$1_already_run
 	@${GCOVR_DIR}/scripts/gcovr $${$1_COVERAGE_ARGS} --sort-percentage
 
+.PHONY : cppcheck_$1
+cppcheck_$1 :
+	cppcheck --enable=all --quiet -i ut -I ../include -I ../modules/cpp-common/include .
+
 test : run_$1
 valgrind : valgrind_$1
 valgrind_check : valgrind_check_$1
@@ -187,7 +181,6 @@ coverage_check : coverage_check_$1
 coverage_raw : coverage_raw_$1
 clangtidy: clangtidy_$1
 cppcheck : cppcheck_$1
-analysis : analysis_$1
 
 CLEANS += $${BUILD_DIR}/$1/valgrind_output.xml $${BUILD_DIR}/$1/.$1_already_run
 
@@ -241,6 +234,15 @@ full_test : valgrind_check coverage_raw coverage_check
 clean :
 	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
 	@rm -fr $(sort ${CLEAN_DIRS})
+
+analysis :
+	make clean
+	scan-build -enable-checker core -enable-checker cplusplus -enable-checker deadcode -enable-checker security -enable-checker unix make
+
+analysis_version :
+	@# Print out what version of clang is being used. We don't print the
+	@# command as this makes the output more complicated.
+	@clang --version
 
 # Makefile debugging target
 #
