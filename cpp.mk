@@ -21,7 +21,7 @@
 #   CLEAN_DIRS          - All directories listed in this will be removed by `make clean`
 
 .DEFAULT_GOAL := all
-.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck
+.PHONY : all test full_test valgrind valgrind_check coverage_check coverage_raw clean cppcheck analysis analysis_version
 
 # Makefiles can override these if needed
 ROOT ?= ..
@@ -246,6 +246,15 @@ full_test : valgrind_check service_test coverage_raw coverage_check
 clean :
 	@rm -f $(sort ${CLEANS}) # make's sort function removes duplicates as a side effect
 	@rm -fr $(sort ${CLEAN_DIRS})
+
+analysis :
+	make clean
+	scan-build -enable-checker core -enable-checker cplusplus -enable-checker deadcode -enable-checker security -enable-checker unix make
+
+analysis_version :
+	@# Print out what version of clang is being used. We don't print the
+	@# command as this makes the output more complicated.
+	@clang --version
 
 # Makefile debugging target
 #
