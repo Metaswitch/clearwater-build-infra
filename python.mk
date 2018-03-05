@@ -213,6 +213,11 @@ analysis: ${BANDIT}
 	# Files in -x are ignored. Only issues of medium severity and above (-ll) are shown.
 	${ENV_DIR}/bin/bandit -r . -x "${BANDIT_EXCLUDE_LIST}" -ll
 
+analysis_version: ${BANDIT}
+	@# Report the bandit version used in this analysis. We don't print the
+	@# command as this makes the output more complicated.
+	@${ENV_DIR}/bin/bandit --version
+
 .PHONY: env
 env: ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}
 
