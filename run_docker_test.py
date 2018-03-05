@@ -14,6 +14,9 @@ parser.add_argument('service_test_dir',
 
 args = parser.parse_args()
 
+absolute_dir = os.path.abspath(args.service_test_dir)
+log_dir = os.path.join(absolute_dir, "log")
+
 if not os.path.exists(args.service_test_dir):
     print("No service tests found")
     sys.exit(0)
@@ -48,7 +51,10 @@ with open(old_image_id_path, "w") as f:
 try:
     os.chdir(args.service_test_dir)
     subprocess.check_call(["docker", "build", "-t", docker_image_id, "."])
-    subprocess.check_call(["docker", "run", "--name", docker_container_name, "-t", docker_image_id])
+    subprocess.check_call(["docker", "run",
+                           "--name", docker_container_name,
+                           "-v", "{}:/log".format(log_dir),
+                           "-t", docker_image_id])
 finally:
     # Delete the container we just built.
     subprocess.check_call(["docker", "rm", docker_container_name])
