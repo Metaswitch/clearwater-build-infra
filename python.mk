@@ -35,7 +35,11 @@ ${ENV_DIR}/.pip_${PIP_VERSION}_wheel_${WHEEL_VERSION}:
 	rm -rf ${ENV_DIR}
 
 	# Set up a fresh virtual environment and install pip
+ifeq (${PYTHON_BIN}, python3)
+	${PYTHON_BIN} -m venv ${ENV_DIR}
+else
 	virtualenv --setuptools --python=$(PYTHON_BIN) $(ENV_DIR)
+endif
 	$(ENV_DIR)/bin/easy_install "setuptools==${SETUPTOOLS_VERSION}"
 
 	# Ensure we have an up to date version of pip with wheel support
