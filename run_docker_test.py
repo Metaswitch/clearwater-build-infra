@@ -58,6 +58,7 @@ try:
 finally:
     # Delete the container we just built.
     subprocess.check_call(["docker", "rm", docker_container_name])
+    images = subprocess.check_output(["docker", "images"]).decode()
     # Delete the _previous_ image, not the one we just built.
-    if old_image_id is not None:
+    if old_image_id is not None and old_image_id in images:
         subprocess.check_call(["docker", "rmi", old_image_id])
