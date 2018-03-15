@@ -5,6 +5,9 @@
 # Otherwise no rights are granted except for those provided to you by
 # Metaswitch Networks in a separate written agreement.
 
+ROOT ?= ..
+BUILD_DIR ?= ${ROOT}/doxygen
+
 .PHONY: doxygen
 doxygen:
 	doxygen -g ${BUILD_DIR}/Doxyfile
