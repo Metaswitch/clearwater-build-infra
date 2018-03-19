@@ -98,10 +98,6 @@ ifeq ($2,release)
 service_test_$1: service_test_copy_files_$1
 	mkdir -p $${BUILD_DIR}/service_tests
 	python3 $${ROOT}/build-infra/run_docker_test.py $${SERVICE_TEST_DIR} $${BUILD_DIR}/service_tests
-
-# Shortcut alias
-.PHONY: service_test
-service_test: service_test_$1
 endif
 
 CLEANS += $${$1_CLANGTIDY}
