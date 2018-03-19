@@ -11,6 +11,9 @@ parser = argparse.ArgumentParser(description='Run a service test in Docker')
 parser.add_argument('service_test_dir',
                     type=str,
                     help='Path of the service test directory')
+parser.add_argument('build_dir',
+                    type=str,
+                    help='Path of a directory to hold temporary build files')
 
 args = parser.parse_args()
 
@@ -37,8 +40,8 @@ docker_container_name = str(uuid.uuid4())
 # This isn't perfect cleanup - if someone does a test and then never works on
 # that repo again, they'll have an image which will never get deleted.
 # Likewise, it's possible to delete or lose track of the
-# service_tests/previous_image_id file.
-old_image_id_path = os.path.join(args.service_test_dir, "previous_image_id")
+# previous_image_id file.
+old_image_id_path = os.path.join(args.build_dir, "previous_image_id")
 old_image_id = None
 
 if os.path.exists(old_image_id_path):
@@ -49,16 +52,14 @@ with open(old_image_id_path, "w") as f:
     f.write(docker_image_id)
 
 try:
-    os.chdir(args.service_test_dir)
-    subprocess.check_call(["docker", "build", "-t", docker_image_id, "."])
+    subprocess.check_call(["docker", "build", "-t", docker_image_id, args.service_test_dir])
     subprocess.check_call(["docker", "run",
                            "--name", docker_container_name,
                            "-v", "{}:/log".format(log_dir),
-                           "-t", docker_image_id])
+                           "-t", docker_image_id,
+                           "--rm"])
 finally:
-    # Delete the container we just built.
-    subprocess.check_call(["docker", "rm", docker_container_name])
-    images = subprocess.check_output(["docker", "images"]).decode()
-    # Delete the _previous_ image, not the one we just built.
+    # Delete the _previous_ image if it still exists, not the one we just built.
+    images = subprocess.check_output(["docker", "images", "-q"]).decode()
     if old_image_id is not None and old_image_id in images:
         subprocess.check_call(["docker", "rmi", old_image_id])

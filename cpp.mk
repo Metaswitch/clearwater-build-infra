@@ -96,7 +96,8 @@ service_test:
 ifeq ($2,release)
 .PHONY: service_test_$1
 service_test_$1: service_test_copy_files_$1
-	python3 $${ROOT}/build-infra/run_docker_test.py $${SERVICE_TEST_DIR}
+	mkdir -p $${BUILD_DIR}/service_tests
+	python3 $${ROOT}/build-infra/run_docker_test.py $${SERVICE_TEST_DIR} $${BUILD_DIR}/service_tests
 
 # Shortcut alias
 .PHONY: service_test
