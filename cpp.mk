@@ -79,15 +79,25 @@ CLEAN_DIRS += $${$1_OBJECT_DIR}
 clangtidy_$1: $${$1_CLANGTIDY}
 	cat $${$1_CLANGTIDY}
 
+# Service tests must run under Docker, to provide isolation, and this Makefile
+# enforces this. To run service tests, repositories must provide:
+# - a service_tests/ directory at the top level
+# - a Dockerfile in that directory which will run the tests
+# - a service_test_copy_files_NAME Makefile target which is responsible for
+#   copying any necessary files (e.g. the binary and libraries under test) into
+#   the service_test/ directory structure - the Dockerfile cannot see anything
+#   above this directory.
+
+.PHONY: service_test_copy_files_$1
+service_test_copy_files_$1:
+
 service_test:
+
 ifeq ($2,release)
 .PHONY: service_test_$1
-service_test_$1: $${BUILD_DIR}/bin/$1
-	if [ -d $${SERVICE_TEST_DIR} ]; then $${SERVICE_TEST_DIR}/service_test_main; else echo "No service tests found"; fi
-
-# Shortcut alias
-.PHONY: service_test
-service_test: service_test_$1
+service_test_$1: service_test_copy_files_$1
+	mkdir -p $${BUILD_DIR}/service_tests
+	python3 $${ROOT}/build-infra/run_docker_test.py $${SERVICE_TEST_DIR} $${BUILD_DIR}/service_tests
 endif
 
 CLEANS += $${$1_CLANGTIDY}
