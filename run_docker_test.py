@@ -54,10 +54,10 @@ with open(old_image_id_path, "w") as f:
 try:
     subprocess.check_call(["docker", "build", "-t", docker_image_id, args.service_test_dir])
     subprocess.check_call(["docker", "run",
+                           "--rm",
                            "--name", docker_container_name,
                            "-v", "{}:/log".format(log_dir),
-                           "-t", docker_image_id,
-                           "--rm"])
+                           "-t", docker_image_id])
 finally:
     # Delete the _previous_ image if it still exists, not the one we just built.
     images = subprocess.check_output(["docker", "images", "-q"]).decode()
