@@ -54,6 +54,7 @@ with open(old_image_id_path, "w") as f:
 try:
     subprocess.check_call(["docker", "build", "-t", docker_image_id, args.service_test_dir])
     subprocess.check_call(["docker", "run",
+                           "--privileged",
                            "--rm",
                            "--name", docker_container_name,
                            "-v", "{}:/log".format(log_dir),
